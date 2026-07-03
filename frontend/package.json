@@ -23,21 +23,21 @@
     "expo-location": "~16.5.5",
     "react": "^18.2.0",
     "react-dom": "18.2.0",
-    "react-native": "^0.73.0",
+    "react-native": "0.73.6",
     "react-native-gesture-handler": "2.14.0",
-    "react-native-maps": "^1.29.0",
-    "react-native-safe-area-context": "4.2.0",
-    "react-native-screens": "3.17.0",
+    "react-native-maps": "^1.10.0",
+    "react-native-safe-area-context": "^4.8.2",
+    "react-native-screens": "^3.29.0",
     "react-native-web": "~0.19.6",
     "zustand": "^4.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
-    "@types/react": "^18.2.0",
+    "@types/react": "^18.2.45",
     "@types/react-native": "^0.73.0",
     "eslint": "^8.50.0",
     "jest": "^29.7.0",
-    "typescript": "^6.0.3"
+    "typescript": "^5.3.3"
   },
   "private": true
 }
