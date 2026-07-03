@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Job from '../models/Job.js';
-import { applyToJob, createJob as createMemoryJob, findJobById, findJobs, incrementJobViews } from '../utils/inMemoryStore.js';
+import { applyToJob, createJob as createMemoryJob, findJobs, incrementJobViews } from '../utils/inMemoryStore.js';
+
+interface AuthedRequest extends Request {
+  user?: { id?: string };
+}
 
 // TypeScript Interfaces
 interface GeoCoordinates {
@@ -31,33 +35,34 @@ interface ValidationError {
 }
 
 // Validation helper function
-const validateJobRequirement = (payload: any): ValidationError[] => {
+const validateJobRequirement = (payload: unknown): ValidationError[] => {
+  const data = payload as Partial<CreateJobRequirementPayload>;
   const errors: ValidationError[] = [];
 
-  if (!payload.employerId || typeof payload.employerId !== 'string' || payload.employerId.trim() === '') {
+  if (!data.employerId || typeof data.employerId !== 'string' || data.employerId.trim() === '') {
     errors.push({ field: 'employerId', message: 'Valid employer ID is required' });
   }
 
-  if (!payload.workerCategory || typeof payload.workerCategory !== 'string' || payload.workerCategory.trim() === '') {
+  if (!data.workerCategory || typeof data.workerCategory !== 'string' || data.workerCategory.trim() === '') {
     errors.push({ field: 'workerCategory', message: 'Worker category is required (e.g., mason, painter, helper)' });
   }
 
-  if (!Number.isInteger(payload.requiredWorkersCount) || payload.requiredWorkersCount <= 0) {
+  if (!Number.isInteger(data.requiredWorkersCount) || (data.requiredWorkersCount ?? 0) <= 0) {
     errors.push({ field: 'requiredWorkersCount', message: 'Required workers count must be a positive integer' });
   }
 
-  if (typeof payload.dailyWageRate !== 'number' || payload.dailyWageRate <= 0) {
+  if (typeof data.dailyWageRate !== 'number' || data.dailyWageRate <= 0) {
     errors.push({ field: 'dailyWageRate', message: 'Daily wage rate must be a positive number' });
   }
 
-  if (!payload.jobDescription || typeof payload.jobDescription !== 'string' || payload.jobDescription.trim().length < 10) {
+  if (!data.jobDescription || typeof data.jobDescription !== 'string' || data.jobDescription.trim().length < 10) {
     errors.push({ field: 'jobDescription', message: 'Job description is required and must be at least 10 characters' });
   }
 
-  if (!payload.geoCoordinates || typeof payload.geoCoordinates !== 'object') {
+  if (!data.geoCoordinates || typeof data.geoCoordinates !== 'object') {
     errors.push({ field: 'geoCoordinates', message: 'Geo coordinates object is required' });
   } else {
-    const { latitude, longitude } = payload.geoCoordinates;
+    const { latitude, longitude } = data.geoCoordinates;
     if (typeof latitude !== 'number' || latitude < -90 || latitude > 90) {
       errors.push({ field: 'geoCoordinates.latitude', message: 'Latitude must be a number between -90 and 90' });
     }
@@ -66,11 +71,11 @@ const validateJobRequirement = (payload: any): ValidationError[] => {
     }
   }
 
-  if (payload.urgency && !['low', 'medium', 'high'].includes(payload.urgency)) {
+  if (data.urgency && !['low', 'medium', 'high'].includes(data.urgency)) {
     errors.push({ field: 'urgency', message: 'Urgency must be one of: low, medium, high' });
   }
 
-  if (payload.estimatedDays && (!Number.isInteger(payload.estimatedDays) || payload.estimatedDays <= 0)) {
+  if (data.estimatedDays && (!Number.isInteger(data.estimatedDays) || data.estimatedDays <= 0)) {
     errors.push({ field: 'estimatedDays', message: 'Estimated days must be a positive integer' });
   }
 
@@ -84,12 +89,17 @@ export const getJobs = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
     const useMemoryStore = mongoose.connection.readyState !== 1;
 
-    const filter: any = { status: 'open' };
+    const filter: Record<string, unknown> = { status: 'open' };
     if (city) filter['location.city'] = city;
     if (category) filter.category = category;
 
     const jobs = useMemoryStore
-      ? (await findJobs(filter)).slice(skip, skip + Number(limit)).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime())
+      ? (await findJobs(filter))
+          .slice(skip, skip + Number(limit))
+          .sort(
+            (a: { createdAt: Date }, b: { createdAt: Date }) =>
+              b.createdAt.getTime() - a.createdAt.getTime()
+          )
       : await Job.find(filter)
           .populate('employer', 'name profilePicture ratings')
           .skip(skip)
@@ -140,7 +150,7 @@ export const getJobById = async (req: Request, res: Response) => {
 export const createJob = async (req: Request, res: Response) => {
   try {
     const { title, description, category, payRate, location, startDate, endDate, duration } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthedRequest).user?.id;
     const useMemoryStore = mongoose.connection.readyState !== 1;
 
     if (!userId) {
@@ -172,8 +182,8 @@ export const createJob = async (req: Request, res: Response) => {
           employer: userId,
         });
 
-    if (!useMemoryStore) {
-      await (job as any).save();
+    if (!useMemoryStore && job instanceof Job) {
+      await job.save();
     }
     res.status(201).json(job);
   } catch (error) {
@@ -184,7 +194,7 @@ export const createJob = async (req: Request, res: Response) => {
 export const applyJob = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthedRequest).user?.id;
     const useMemoryStore = mongoose.connection.readyState !== 1;
 
     if (!userId) {
@@ -270,14 +280,18 @@ export const createJobRequirement = async (req: Request, res: Response): Promise
     } else {
       // Use MongoDB
       createdJob = new Job(jobRequirementData);
-      await (createdJob as any).save();
+      if (createdJob instanceof Job) {
+        await createdJob.save();
+      }
     }
+
+    const createdJobId = String((createdJob as { _id?: unknown })._id ?? '');
 
     // Return success response with job details
     res.status(201).json({
       message: 'Job requirement posted successfully',
       job: {
-        id: (createdJob as any)._id,
+        id: createdJobId,
         title: createdJob.title,
         category: createdJob.category,
         requiredWorkers: payload.requiredWorkersCount,
@@ -297,23 +311,25 @@ export const createJobRequirement = async (req: Request, res: Response): Promise
         createdAt: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Log error for debugging
     console.error('Error creating job requirement:', error);
 
+    const err = error as { name?: string; message?: string };
+
     // Handle specific MongoDB errors
-    if (error.name === 'ValidationError') {
+    if (err.name === 'ValidationError') {
       res.status(400).json({
         message: 'Validation error',
-        error: error.message,
+        error: err.message,
       });
       return;
     }
 
-    if (error.name === 'CastError') {
+    if (err.name === 'CastError') {
       res.status(400).json({
         message: 'Invalid employer ID format',
-        error: error.message,
+        error: err.message,
       });
       return;
     }
@@ -321,7 +337,7 @@ export const createJobRequirement = async (req: Request, res: Response): Promise
     // Generic server error
     res.status(500).json({
       message: 'Server error while creating job requirement',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
     });
   }
 };

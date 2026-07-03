@@ -6,6 +6,27 @@ import User from '../models/User.js';
 import { createUser, findUserByEmail, updateUserById } from '../utils/inMemoryStore.js';
 import { sendOTP as firebaseSendOTP, generateOTP, validatePhoneNumber } from '../utils/firebase.js';
 import { otpStore } from '../utils/otpStore.js';
+import type { AuthRequest } from '../middleware/auth.js';
+
+interface BasicUserRecord {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  currentRole?: 'worker' | 'employer';
+  workerCategory?: string | null;
+  dailyRate?: number | null;
+  skills?: string[];
+  is_online?: boolean;
+  is_available?: boolean;
+}
+
+const getAuthUserId = (req: AuthRequest): string | undefined => {
+  const { user } = req;
+  if (!user || typeof user === 'string') return undefined;
+  if ('id' in user && typeof user.id === 'string') return user.id;
+  return undefined;
+};
 
 export const signup = async (req: Request, res: Response) => {
   try {
@@ -43,8 +64,8 @@ export const signup = async (req: Request, res: Response) => {
           location: { city },
         });
 
-    if (!useMemoryStore) {
-      await (user as any).save();
+    if (!useMemoryStore && user instanceof User) {
+      await user.save();
     }
 
     // Generate token
@@ -150,16 +171,17 @@ interface RoleValidationError {
  * Validates the switchRole request body.
  * workerProfile is only required (and only validated) when currentRole === 'worker'.
  */
-function validateSwitchRolePayload(body: any): RoleValidationError[] {
+function validateSwitchRolePayload(body: unknown): RoleValidationError[] {
+  const data = body as Partial<SwitchRolePayload>;
   const errors: RoleValidationError[] = [];
 
-  if (!body.currentRole || typeof body.currentRole !== 'string' || !VALID_ROLES.has(body.currentRole)) {
+  if (!data.currentRole || typeof data.currentRole !== 'string' || !VALID_ROLES.has(data.currentRole)) {
     errors.push({ field: 'currentRole', message: "Must be either 'worker' or 'employer'." });
     return errors; // Nothing else to validate without a valid role
   }
 
-  if (body.currentRole === 'worker') {
-    const wp = body.workerProfile;
+  if (data.currentRole === 'worker') {
+    const wp = data.workerProfile;
     if (!wp || typeof wp !== 'object') {
       errors.push({
         field: 'workerProfile',
@@ -209,7 +231,7 @@ function validateSwitchRolePayload(body: any): RoleValidationError[] {
  */
 export const switchRole = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthUserId(req as AuthRequest);
     if (!userId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -239,7 +261,7 @@ export const switchRole = async (req: Request, res: Response): Promise<void> => 
     }
 
     const updatedUser = useMemoryStore
-      ? await updateUserById(userId, patch as any)
+      ? await updateUserById(userId, patch)
       : await User.findByIdAndUpdate(userId, patch, { new: true }).select('-password');
 
     if (!updatedUser) {
@@ -247,10 +269,12 @@ export const switchRole = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    const safeUser = updatedUser as BasicUserRecord;
+
     // Re-sign the token so downstream requests can trust the new role without
     // an extra DB round trip (DB remains the ultimate source of truth).
     const token = jwt.sign(
-      { id: (updatedUser as any)._id, email: (updatedUser as any).email, currentRole: payload.currentRole },
+      { id: safeUser._id, email: safeUser.email, currentRole: payload.currentRole },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
@@ -259,22 +283,23 @@ export const switchRole = async (req: Request, res: Response): Promise<void> => 
       message: `Role switched to ${payload.currentRole}`,
       token,
       user: {
-        id: (updatedUser as any)._id,
-        name: (updatedUser as any).name,
-        email: (updatedUser as any).email,
-        currentRole: (updatedUser as any).currentRole,
-        workerCategory: (updatedUser as any).workerCategory ?? null,
-        dailyRate: (updatedUser as any).dailyRate ?? null,
-        skills: (updatedUser as any).skills ?? [],
-        is_online: (updatedUser as any).is_online ?? false,
-        is_available: (updatedUser as any).is_available ?? false,
+        id: safeUser._id,
+        name: safeUser.name,
+        email: safeUser.email,
+        currentRole: safeUser.currentRole,
+        workerCategory: safeUser.workerCategory ?? null,
+        dailyRate: safeUser.dailyRate ?? null,
+        skills: safeUser.skills ?? [],
+        is_online: safeUser.is_online ?? false,
+        is_available: safeUser.is_available ?? false,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     console.error('Error in switchRole:', error);
     res.status(500).json({
       message: 'Server error while switching role',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
     });
   }
 };
@@ -332,11 +357,12 @@ export const sendOTPToPhone = async (req: Request, res: Response): Promise<void>
       // In development, include OTP in response for testing
       ...(process.env.NODE_ENV === 'development' && { otp }),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     console.error('Error sending OTP:', error);
     res.status(500).json({
       message: 'Server error while sending OTP',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
     });
   }
 };
@@ -380,26 +406,27 @@ export const verifyOTPAndLogin = async (req: Request, res: Response): Promise<vo
     const useMemoryStore = mongoose.connection.readyState !== 1;
 
     // Find or create user
-    let user: any = useMemoryStore
+    let user: BasicUserRecord | null = useMemoryStore
       ? null // Memory store doesn't support direct query, fallback to model
-      : await User.findOne({ phone: phoneNumber });
+      : ((await User.findOne({ phone: phoneNumber })) as unknown as BasicUserRecord | null);
 
     if (!user) {
       // Create new user
-      const userData: any = {
+      const userData = {
         name: name || `User_${phoneNumber.slice(-4)}`,
         phone: phoneNumber,
         email: `${phoneNumber.replace('+', '')}@dainikrojgar.app`, // Auto-generated email
         password: await bcrypt.hash(Math.random().toString(36), 10), // Random password (not used)
-        currentRole: 'employer',
-        userType: 'both',
+        currentRole: 'employer' as const,
+        userType: 'employer' as const,
       };
 
       if (useMemoryStore) {
-        user = await createUser(userData);
+        user = (await createUser(userData)) as unknown as BasicUserRecord;
       } else {
-        user = new User(userData);
-        await user.save();
+        const createdUser = new User(userData);
+        await createdUser.save();
+        user = createdUser as unknown as BasicUserRecord;
       }
     }
 
@@ -407,7 +434,7 @@ export const verifyOTPAndLogin = async (req: Request, res: Response): Promise<vo
     const token = jwt.sign(
       { id: user._id, phone: user.phone, currentRole: user.currentRole },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' } as any
+      { expiresIn: '7d' }
     );
 
     res.status(200).json({
@@ -422,11 +449,12 @@ export const verifyOTPAndLogin = async (req: Request, res: Response): Promise<vo
         is_available: user.is_available || false,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     console.error('Error verifying OTP:', error);
     res.status(500).json({
       message: 'Server error while verifying OTP',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
     });
   }
 };

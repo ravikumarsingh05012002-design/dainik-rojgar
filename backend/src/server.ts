@@ -44,12 +44,26 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'Server is running', timestamp: new Date() });
 });
 
+const getErrorStatus = (err: unknown): number => {
+  if (typeof err === 'object' && err !== null && 'status' in err) {
+    const status = (err as { status?: unknown }).status;
+    if (typeof status === 'number') return status;
+  }
+  return 500;
+};
+
+const getErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  return 'Internal Server Error';
+};
+
 // Error handling middleware
-app.use((err: any, req: Request, res: Response) => {
+app.use((err: unknown, req: Request, res: Response) => {
   console.error(err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    status: err.status || 500,
+  const status = getErrorStatus(err);
+  res.status(status).json({
+    message: getErrorMessage(err),
+    status,
   });
 });
 

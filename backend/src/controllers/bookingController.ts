@@ -14,6 +14,7 @@ import {
   type InMemoryBooking,
   type InMemoryGeoPoint,
 } from '../utils/inMemoryStore.js';
+import type { AuthRequest } from '../middleware/auth.js';
 
 // ---------------------------------------------------------------------------
 // Shared TypeScript interfaces
@@ -30,6 +31,52 @@ interface ValidationError {
   message: string;
 }
 
+interface BasicBookingDoc {
+  _id: unknown;
+  status: BookingStatus;
+  worker?: unknown;
+  employer?: unknown;
+  workerCategory?: string;
+  dailyWageRate?: number;
+  requestedAt?: string | Date;
+  notes?: string;
+  acceptedAt?: Date;
+  cancelledAt?: Date;
+  cancellationReason?: string;
+  startedAt?: Date;
+  completedAt?: Date;
+  employerLocation?: { coordinates: [number, number]; address?: string };
+  destinationLocation?: { coordinates: [number, number]; address?: string };
+  navigation?: {
+    employerLiveLocation?: { coordinates: [number, number]; address?: string };
+    lastUpdatedAt?: Date;
+  };
+}
+
+interface BasicWorkerDoc {
+  currentRole?: string;
+  userType?: string;
+  is_online?: boolean;
+  is_available?: boolean;
+  location?: { latitude?: number; longitude?: number };
+}
+
+const getAuthUserId = (req: Request): string | undefined => {
+  const user = (req as AuthRequest).user;
+  if (!user || typeof user === 'string') return undefined;
+  if ('id' in user && typeof user.id === 'string') return user.id;
+  return undefined;
+};
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  return 'Internal server error';
+};
+
+const isCastError = (error: unknown): boolean => {
+  return typeof error === 'object' && error !== null && 'name' in error && (error as { name?: string }).name === 'CastError';
+};
+
 /** Shape of the "target coordinates to route to" returned by the navigation endpoints */
 interface NavigationPayload {
   bookingId: string;
@@ -45,20 +92,21 @@ interface NavigationPayload {
 // Validation helpers
 // ---------------------------------------------------------------------------
 
-function validateGeoPoint(point: any, fieldName: string): ValidationError[] {
+function validateGeoPoint(point: unknown, fieldName: string): ValidationError[] {
   const errors: ValidationError[] = [];
   if (!point || typeof point !== 'object') {
     errors.push({ field: fieldName, message: 'Required object with latitude and longitude.' });
     return errors;
   }
-  if (typeof point.latitude !== 'number' || isNaN(point.latitude) || point.latitude < -90 || point.latitude > 90) {
+  const geo = point as Partial<GeoInput>;
+  if (typeof geo.latitude !== 'number' || isNaN(geo.latitude) || geo.latitude < -90 || geo.latitude > 90) {
     errors.push({ field: `${fieldName}.latitude`, message: 'Must be a number between -90 and 90.' });
   }
   if (
-    typeof point.longitude !== 'number' ||
-    isNaN(point.longitude) ||
-    point.longitude < -180 ||
-    point.longitude > 180
+    typeof geo.longitude !== 'number' ||
+    isNaN(geo.longitude) ||
+    geo.longitude < -180 ||
+    geo.longitude > 180
   ) {
     errors.push({ field: `${fieldName}.longitude`, message: 'Must be a number between -180 and 180.' });
   }
@@ -74,21 +122,22 @@ interface RequestBookingPayload {
   notes?: string;
 }
 
-function validateRequestBookingPayload(body: any): ValidationError[] {
+function validateRequestBookingPayload(body: unknown): ValidationError[] {
+  const data = body as Partial<RequestBookingPayload>;
   const errors: ValidationError[] = [];
 
-  if (!body.workerId || typeof body.workerId !== 'string' || body.workerId.trim() === '') {
+  if (!data.workerId || typeof data.workerId !== 'string' || data.workerId.trim() === '') {
     errors.push({ field: 'workerId', message: 'Worker ID is required.' });
   }
-  if (!body.workerCategory || typeof body.workerCategory !== 'string' || body.workerCategory.trim() === '') {
+  if (!data.workerCategory || typeof data.workerCategory !== 'string' || data.workerCategory.trim() === '') {
     errors.push({ field: 'workerCategory', message: 'Worker category is required.' });
   }
-  if (typeof body.dailyWageRate !== 'number' || isNaN(body.dailyWageRate) || body.dailyWageRate <= 0) {
+  if (typeof data.dailyWageRate !== 'number' || isNaN(data.dailyWageRate) || data.dailyWageRate <= 0) {
     errors.push({ field: 'dailyWageRate', message: 'Must be a positive number.' });
   }
-  errors.push(...validateGeoPoint(body.employerLocation, 'employerLocation'));
-  errors.push(...validateGeoPoint(body.destinationLocation, 'destinationLocation'));
-  if (body.notes !== undefined && (typeof body.notes !== 'string' || body.notes.length > 500)) {
+  errors.push(...validateGeoPoint(data.employerLocation, 'employerLocation'));
+  errors.push(...validateGeoPoint(data.destinationLocation, 'destinationLocation'));
+  if (data.notes !== undefined && (typeof data.notes !== 'string' || data.notes.length > 500)) {
     errors.push({ field: 'notes', message: 'Must be a string of 500 characters or fewer.' });
   }
 
@@ -126,7 +175,7 @@ const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
  */
 export const requestBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    const employerId = (req as any).user?.id;
+    const employerId = getAuthUserId(req);
     if (!employerId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -151,18 +200,19 @@ export const requestBooking = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const workerRole = (worker as any).currentRole ?? (worker as any).userType;
+    const workerData = worker as BasicWorkerDoc;
+    const workerRole = workerData.currentRole ?? workerData.userType;
     if (workerRole !== 'worker') {
       res.status(400).json({ message: 'Target user is not currently in the worker role' });
       return;
     }
-    if (!(worker as any).is_online || !(worker as any).is_available) {
+    if (!workerData.is_online || !workerData.is_available) {
       res.status(409).json({ message: 'Worker is not currently online and available for dispatch' });
       return;
     }
 
     // 2. Create the booking document
-    let booking: any;
+    let booking: InMemoryBooking | BasicBookingDoc;
     if (useMemoryStore) {
       booking = await createMemoryBooking({
         employerId,
@@ -182,7 +232,7 @@ export const requestBooking = async (req: Request, res: Response): Promise<void>
         notes: payload.notes,
       });
     } else {
-      booking = new Booking({
+      const dbBooking = new Booking({
         employer: employerId,
         worker: payload.workerId,
         workerCategory: payload.workerCategory,
@@ -201,32 +251,35 @@ export const requestBooking = async (req: Request, res: Response): Promise<void>
         notes: payload.notes,
         statusHistory: [{ status: 'pending', timestamp: new Date() }],
       });
-      await booking.save();
+      await dbBooking.save();
+      booking = dbBooking as unknown as BasicBookingDoc;
     }
+
+    const bookingRecord = booking as InMemoryBooking | BasicBookingDoc;
 
     res.status(201).json({
       message: 'Booking request created. Waiting for worker to accept.',
       booking: {
-        id: booking._id,
-        status: booking.status,
+        id: String(bookingRecord._id),
+        status: bookingRecord.status,
         workerId: payload.workerId,
         employerId,
         workerCategory: payload.workerCategory,
         dailyWageRate: payload.dailyWageRate,
         employerLocation: payload.employerLocation,
         destinationLocation: payload.destinationLocation,
-        requestedAt: booking.requestedAt ?? new Date().toISOString(),
+        requestedAt: bookingRecord.requestedAt ?? new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in requestBooking:', error);
-    if (error.name === 'CastError') {
-      res.status(400).json({ message: 'Invalid worker ID format', error: error.message });
+    if (isCastError(error)) {
+      res.status(400).json({ message: 'Invalid worker ID format', error: getErrorMessage(error) });
       return;
     }
     res.status(500).json({
       message: 'Server error while creating booking request',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -241,7 +294,7 @@ export const requestBooking = async (req: Request, res: Response): Promise<void>
  */
 export const getWorkerPendingBookings = async (req: Request, res: Response): Promise<void> => {
   try {
-    const workerId = (req as any).user?.id;
+    const workerId = getAuthUserId(req);
     if (!workerId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -249,7 +302,7 @@ export const getWorkerPendingBookings = async (req: Request, res: Response): Pro
 
     const useMemoryStore = mongoose.connection.readyState !== 1;
 
-    let bookings: any[];
+    let bookings: unknown[];
     if (useMemoryStore) {
       bookings = await findPendingBookingsForWorker(workerId);
     } else {
@@ -259,30 +312,33 @@ export const getWorkerPendingBookings = async (req: Request, res: Response): Pro
         .lean();
     }
 
-    const formatted = bookings.map((b: any) => ({
-      id: b._id,
-      status: b.status,
-      workerCategory: b.workerCategory,
-      dailyWageRate: b.dailyWageRate,
+    const formatted = bookings.map((b) => {
+      const row = b as InMemoryBooking & { employer?: { _id?: unknown; name?: string; profilePicture?: string } } & BasicBookingDoc;
+      return ({
+      id: String(row._id),
+      status: row.status,
+      workerCategory: row.workerCategory,
+      dailyWageRate: row.dailyWageRate,
       employer: useMemoryStore
-        ? { id: b.employerId }
-        : { id: b.employer?._id, name: b.employer?.name, profilePicture: b.employer?.profilePicture },
+        ? { id: row.employerId }
+        : { id: row.employer?._id, name: row.employer?.name, profilePicture: row.employer?.profilePicture },
       employerLocation: useMemoryStore
-        ? b.employerLocation
-        : { latitude: b.employerLocation.coordinates[1], longitude: b.employerLocation.coordinates[0], address: b.employerLocation.address },
+        ? row.employerLocation
+        : { latitude: row.employerLocation!.coordinates[1], longitude: row.employerLocation!.coordinates[0], address: row.employerLocation!.address },
       destinationLocation: useMemoryStore
-        ? b.destinationLocation
-        : { latitude: b.destinationLocation.coordinates[1], longitude: b.destinationLocation.coordinates[0], address: b.destinationLocation.address },
-      notes: b.notes ?? null,
-      requestedAt: b.requestedAt,
-    }));
+        ? row.destinationLocation
+        : { latitude: row.destinationLocation!.coordinates[1], longitude: row.destinationLocation!.coordinates[0], address: row.destinationLocation!.address },
+      notes: row.notes ?? null,
+      requestedAt: row.requestedAt,
+    });
+    });
 
     res.status(200).json({ bookings: formatted, count: formatted.length });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getWorkerPendingBookings:', error);
     res.status(500).json({
       message: 'Server error while fetching pending bookings',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -298,7 +354,7 @@ export const getWorkerPendingBookings = async (req: Request, res: Response): Pro
  */
 export const respondToBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    const workerId = (req as any).user?.id;
+    const workerId = getAuthUserId(req);
     if (!workerId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -326,18 +382,21 @@ export const respondToBooking = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const bookingWorkerId = useMemoryStore ? (booking as InMemoryBooking).workerId : String((booking as any).worker);
+    const bookingWorkerId = useMemoryStore
+      ? (booking as InMemoryBooking).workerId
+      : String((booking as BasicBookingDoc).worker);
     if (bookingWorkerId !== workerId) {
       res.status(403).json({ message: 'This booking is not assigned to you' });
       return;
     }
 
-    if ((booking as any).status !== 'pending') {
-      res.status(409).json({ message: `Booking already ${(booking as any).status}; cannot respond again.` });
+    const currentBookingStatus = (booking as InMemoryBooking | BasicBookingDoc).status;
+    if (currentBookingStatus !== 'pending') {
+      res.status(409).json({ message: `Booking already ${currentBookingStatus}; cannot respond again.` });
       return;
     }
 
-    let updatedBooking: any;
+    let updatedBooking: InMemoryBooking | BasicBookingDoc | null;
     if (action === 'accept') {
       const now = new Date();
       updatedBooking = useMemoryStore
@@ -376,22 +435,22 @@ export const respondToBooking = async (req: Request, res: Response): Promise<voi
     res.status(200).json({
       message: action === 'accept' ? 'Booking accepted' : 'Booking declined',
       booking: {
-        id: updatedBooking._id,
-        status: updatedBooking.status,
-        acceptedAt: updatedBooking.acceptedAt ?? null,
-        cancelledAt: updatedBooking.cancelledAt ?? null,
-        cancellationReason: updatedBooking.cancellationReason ?? null,
+        id: String((updatedBooking as InMemoryBooking | BasicBookingDoc)._id),
+        status: (updatedBooking as InMemoryBooking | BasicBookingDoc).status,
+        acceptedAt: (updatedBooking as InMemoryBooking | BasicBookingDoc).acceptedAt ?? null,
+        cancelledAt: (updatedBooking as InMemoryBooking | BasicBookingDoc).cancelledAt ?? null,
+        cancellationReason: (updatedBooking as InMemoryBooking | BasicBookingDoc).cancellationReason ?? null,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in respondToBooking:', error);
-    if (error.name === 'CastError') {
-      res.status(400).json({ message: 'Invalid booking ID format', error: error.message });
+    if (isCastError(error)) {
+      res.status(400).json({ message: 'Invalid booking ID format', error: getErrorMessage(error) });
       return;
     }
     res.status(500).json({
       message: 'Server error while responding to booking',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -408,7 +467,7 @@ export const respondToBooking = async (req: Request, res: Response): Promise<voi
  */
 export const updateBookingStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthUserId(req);
     if (!userId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -444,14 +503,14 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const employerId = useMemoryStore ? (booking as InMemoryBooking).employerId : String((booking as any).employer);
-    const workerId = useMemoryStore ? (booking as InMemoryBooking).workerId : String((booking as any).worker);
+    const employerId = useMemoryStore ? (booking as InMemoryBooking).employerId : String((booking as BasicBookingDoc).employer);
+    const workerId = useMemoryStore ? (booking as InMemoryBooking).workerId : String((booking as BasicBookingDoc).worker);
     if (userId !== employerId && userId !== workerId) {
       res.status(403).json({ message: 'You are not a participant on this booking' });
       return;
     }
 
-    const currentStatus: BookingStatus = (booking as any).status;
+    const currentStatus: BookingStatus = (booking as InMemoryBooking | BasicBookingDoc).status;
     const allowed = ALLOWED_TRANSITIONS[currentStatus] ?? [];
     if (!allowed.includes(nextStatus)) {
       res.status(409).json({
@@ -471,7 +530,7 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
     }
 
     const updatedBooking = useMemoryStore
-      ? await updateMemoryBookingStatus(id, nextStatus, extra as any)
+      ? await updateMemoryBookingStatus(id, nextStatus, extra)
       : await Booking.findByIdAndUpdate(
           id,
           { status: nextStatus, ...extra, $push: { statusHistory: { status: nextStatus, timestamp: now } } },
@@ -490,23 +549,23 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
     res.status(200).json({
       message: `Booking status updated to '${nextStatus}'`,
       booking: {
-        id: (updatedBooking as any)._id,
-        status: (updatedBooking as any).status,
-        startedAt: (updatedBooking as any).startedAt ?? null,
-        completedAt: (updatedBooking as any).completedAt ?? null,
-        cancelledAt: (updatedBooking as any).cancelledAt ?? null,
-        cancellationReason: (updatedBooking as any).cancellationReason ?? null,
+        id: String((updatedBooking as InMemoryBooking | BasicBookingDoc)._id),
+        status: (updatedBooking as InMemoryBooking | BasicBookingDoc).status,
+        startedAt: (updatedBooking as InMemoryBooking | BasicBookingDoc).startedAt ?? null,
+        completedAt: (updatedBooking as InMemoryBooking | BasicBookingDoc).completedAt ?? null,
+        cancelledAt: (updatedBooking as InMemoryBooking | BasicBookingDoc).cancelledAt ?? null,
+        cancellationReason: (updatedBooking as InMemoryBooking | BasicBookingDoc).cancellationReason ?? null,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in updateBookingStatus:', error);
-    if (error.name === 'CastError') {
-      res.status(400).json({ message: 'Invalid booking ID format', error: error.message });
+    if (isCastError(error)) {
+      res.status(400).json({ message: 'Invalid booking ID format', error: getErrorMessage(error) });
       return;
     }
     res.status(500).json({
       message: 'Server error while updating booking status',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -523,7 +582,7 @@ export const updateBookingStatus = async (req: Request, res: Response): Promise<
  */
 export const updateEmployerLiveLocation = async (req: Request, res: Response): Promise<void> => {
   try {
-    const employerId = (req as any).user?.id;
+    const employerId = getAuthUserId(req);
     if (!employerId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -547,14 +606,14 @@ export const updateEmployerLiveLocation = async (req: Request, res: Response): P
 
     const bookingEmployerId = useMemoryStore
       ? (booking as InMemoryBooking).employerId
-      : String((booking as any).employer);
+      : String((booking as BasicBookingDoc).employer);
     if (bookingEmployerId !== employerId) {
       res.status(403).json({ message: 'This booking does not belong to you' });
       return;
     }
 
     const activeStates: BookingStatus[] = ['accepted', 'en_route', 'ongoing'];
-    if (!activeStates.includes((booking as any).status)) {
+    if (!activeStates.includes((booking as InMemoryBooking | BasicBookingDoc).status)) {
       res.status(409).json({
         message: `Navigation updates are only accepted while the booking is active (${activeStates.join(', ')}).`,
       });
@@ -581,9 +640,9 @@ export const updateEmployerLiveLocation = async (req: Request, res: Response): P
     const destination = useMemoryStore
       ? (updatedBooking as InMemoryBooking).destinationLocation
       : {
-          latitude: (updatedBooking as any).destinationLocation.coordinates[1],
-          longitude: (updatedBooking as any).destinationLocation.coordinates[0],
-          address: (updatedBooking as any).destinationLocation.address,
+          latitude: (updatedBooking as BasicBookingDoc).destinationLocation!.coordinates[1],
+          longitude: (updatedBooking as BasicBookingDoc).destinationLocation!.coordinates[0],
+          address: (updatedBooking as BasicBookingDoc).destinationLocation!.address,
         };
 
     const distanceRemainingKm = parseFloat(
@@ -593,22 +652,22 @@ export const updateEmployerLiveLocation = async (req: Request, res: Response): P
     res.status(200).json({
       message: 'Live location updated',
       navigation: {
-        bookingId: (updatedBooking as any)._id,
+        bookingId: String((updatedBooking as InMemoryBooking | BasicBookingDoc)._id),
         employerLiveLocation: { latitude, longitude, address: address ?? null },
         destinationLocation: destination,
         distanceRemainingKm,
         lastUpdatedAt: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in updateEmployerLiveLocation:', error);
-    if (error.name === 'CastError') {
-      res.status(400).json({ message: 'Invalid booking ID format', error: error.message });
+    if (isCastError(error)) {
+      res.status(400).json({ message: 'Invalid booking ID format', error: getErrorMessage(error) });
       return;
     }
     res.status(500).json({
       message: 'Server error while updating live location',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -624,7 +683,7 @@ export const updateEmployerLiveLocation = async (req: Request, res: Response): P
  */
 export const getBookingNavigationPayload = async (req: Request, res: Response): Promise<void> => {
   try {
-    const workerId = (req as any).user?.id;
+    const workerId = getAuthUserId(req);
     if (!workerId) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
@@ -639,7 +698,7 @@ export const getBookingNavigationPayload = async (req: Request, res: Response): 
       return;
     }
 
-    const bookingWorkerId = useMemoryStore ? (booking as InMemoryBooking).workerId : String((booking as any).worker);
+    const bookingWorkerId = useMemoryStore ? (booking as InMemoryBooking).workerId : String((booking as BasicBookingDoc).worker);
     if (bookingWorkerId !== workerId) {
       res.status(403).json({ message: 'This booking is not assigned to you' });
       return;
@@ -648,32 +707,33 @@ export const getBookingNavigationPayload = async (req: Request, res: Response): 
     const destinationLocation = useMemoryStore
       ? (booking as InMemoryBooking).destinationLocation
       : {
-          latitude: (booking as any).destinationLocation.coordinates[1],
-          longitude: (booking as any).destinationLocation.coordinates[0],
-          address: (booking as any).destinationLocation.address,
+          latitude: (booking as BasicBookingDoc).destinationLocation!.coordinates[1],
+          longitude: (booking as BasicBookingDoc).destinationLocation!.coordinates[0],
+          address: (booking as BasicBookingDoc).destinationLocation!.address,
         };
 
     const rawLiveLocation = useMemoryStore
       ? (booking as InMemoryBooking).navigation?.employerLiveLocation ?? null
-      : (booking as any).navigation?.employerLiveLocation
+      : (booking as BasicBookingDoc).navigation?.employerLiveLocation
       ? {
-          latitude: (booking as any).navigation.employerLiveLocation.coordinates[1],
-          longitude: (booking as any).navigation.employerLiveLocation.coordinates[0],
-          address: (booking as any).navigation.employerLiveLocation.address,
+          latitude: (booking as BasicBookingDoc).navigation!.employerLiveLocation!.coordinates[1],
+          longitude: (booking as BasicBookingDoc).navigation!.employerLiveLocation!.coordinates[0],
+          address: (booking as BasicBookingDoc).navigation!.employerLiveLocation!.address,
         }
       : null;
 
     const lastUpdatedAt = useMemoryStore
       ? (booking as InMemoryBooking).navigation?.lastUpdatedAt ?? null
-      : (booking as any).navigation?.lastUpdatedAt ?? null;
+      : (booking as BasicBookingDoc).navigation?.lastUpdatedAt ?? null;
 
     // Route to the employer's latest live ping if available, else the fixed job-site destination
     const target = rawLiveLocation ?? destinationLocation;
 
     // Best-effort distance-remaining: worker's last known location → target
     const worker = useMemoryStore ? await findUserById(workerId) : await User.findById(workerId).lean();
-    const workerLat = useMemoryStore ? (worker as any)?.location?.latitude : (worker as any)?.location?.latitude;
-    const workerLon = useMemoryStore ? (worker as any)?.location?.longitude : (worker as any)?.location?.longitude;
+    const workerLoc = worker as BasicWorkerDoc | null;
+    const workerLat = workerLoc?.location?.latitude;
+    const workerLon = workerLoc?.location?.longitude;
 
     const distanceRemainingKm =
       workerLat != null && workerLon != null
@@ -681,8 +741,8 @@ export const getBookingNavigationPayload = async (req: Request, res: Response): 
         : null;
 
     const response: NavigationPayload = {
-      bookingId: (booking as any)._id,
-      status: (booking as any).status,
+      bookingId: String((booking as InMemoryBooking | BasicBookingDoc)._id),
+      status: (booking as InMemoryBooking | BasicBookingDoc).status,
       target: { latitude: target.latitude, longitude: target.longitude },
       destinationLocation,
       employerLiveLocation: rawLiveLocation,
@@ -691,15 +751,15 @@ export const getBookingNavigationPayload = async (req: Request, res: Response): 
     };
 
     res.status(200).json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getBookingNavigationPayload:', error);
-    if (error.name === 'CastError') {
-      res.status(400).json({ message: 'Invalid booking ID format', error: error.message });
+    if (isCastError(error)) {
+      res.status(400).json({ message: 'Invalid booking ID format', error: getErrorMessage(error) });
       return;
     }
     res.status(500).json({
       message: 'Server error while fetching navigation payload',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };

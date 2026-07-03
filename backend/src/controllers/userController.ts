@@ -8,6 +8,42 @@ import {
   type ActiveChip,
   type SearchFilter,
 } from '../utils/inMemoryStore.js';
+import type { AuthRequest } from '../middleware/auth.js';
+
+interface GenericWorkerDoc {
+  _id?: unknown;
+  name?: string;
+  workerCategory?: string;
+  dailyRate?: number;
+  skills?: string[];
+  ratings?: number;
+  reviewCount?: number;
+  isVerified?: boolean;
+  is_available?: boolean;
+  is_online?: boolean;
+  distanceKm?: number | null;
+  relevanceScore?: number;
+  matchedOn?: string[];
+  distanceMeters?: number;
+  location?: { city?: string; latitude?: number; longitude?: number };
+  profilePicture?: string | null;
+  description?: string | null;
+}
+
+const getAuthUserId = (req: Request): string | undefined => {
+  const user = (req as AuthRequest).user;
+  if (!user || typeof user === 'string') return undefined;
+  if ('id' in user && typeof user.id === 'string') return user.id;
+  return undefined;
+};
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  return 'Internal server error';
+};
+
+const normalizeWorkerId = (id: unknown): string => String(id ?? '');
+const normalizeWorkerName = (name?: string): string => name ?? 'Unknown Worker';
 
 // ---------------------------------------------------------------------------
 // TypeScript interfaces
@@ -161,9 +197,9 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
       });
 
       total = result.total;
-      workers = result.workers.map((u: any) => ({
-        id: u._id,
-        name: u.name,
+      workers = result.workers.map((u: GenericWorkerDoc) => ({
+        id: normalizeWorkerId(u._id),
+        name: normalizeWorkerName(u.name),
         workerCategory: u.workerCategory ?? 'general',
         dailyRate: u.dailyRate ?? null,
         skills: u.skills ?? [],
@@ -171,7 +207,7 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
         reviewCount: u.reviewCount ?? 0,
         isVerified: u.isVerified ?? false,
         is_available: u.is_available ?? false,
-        distanceKm: u.distanceKm,
+        distanceKm: u.distanceKm ?? 0,
         location: {
           city: u.location?.city ?? 'Unknown',
           latitude: u.location?.latitude ?? 0,
@@ -222,7 +258,7 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
         .limit(limit)
         .lean();
 
-      workers = docs.map((u: any) => {
+      workers = docs.map((u: GenericWorkerDoc) => {
         // Calculate distance for response — re-use Haversine on returned docs
         const workerLat: number = u.location?.latitude ?? 0;
         const workerLon: number = u.location?.longitude ?? 0;
@@ -237,14 +273,14 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
 
         return {
           id: String(u._id),
-          name: u.name,
-          workerCategory: (u as any).workerCategory ?? 'general',
-          dailyRate: (u as any).dailyRate ?? null,
-          skills: (u as any).skills ?? [],
+          name: normalizeWorkerName(u.name),
+          workerCategory: u.workerCategory ?? 'general',
+          dailyRate: u.dailyRate ?? null,
+          skills: u.skills ?? [],
           ratings: u.ratings ?? 5,
           reviewCount: u.reviewCount ?? 0,
-          isVerified: u.isVerified,
-          is_available: (u as any).is_available ?? false,
+          isVerified: u.isVerified ?? false,
+          is_available: u.is_available ?? false,
           distanceKm,
           location: {
             city: u.location?.city ?? 'Unknown',
@@ -278,11 +314,11 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
     };
 
     res.status(200).json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getNearbyAvailableWorkers:', error);
     res.status(500).json({
       message: 'Server error while fetching nearby workers',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -293,7 +329,7 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthUserId(req);
 
     if (!userId) {
       return res.status(401).json({ message: 'Not authenticated' });
@@ -312,7 +348,7 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthUserId(req);
     const { name, description, profilePicture, location } = req.body;
 
     if (!userId) {
@@ -481,14 +517,14 @@ function buildMongoBaseFilter(p: SearchWorkerQuery): Record<string, unknown> {
  * Determines which profile fields a query string matched.
  * Called on returned documents to annotate the response.
  */
-function detectMatchedFields(doc: Record<string, any>, q: string): string[] {
+function detectMatchedFields(doc: GenericWorkerDoc, q: string): string[] {
   if (!q) return [];
   const lower = q.toLowerCase();
   const fields: string[] = [];
   if (doc.name?.toLowerCase().includes(lower)) fields.push('name');
   if (doc.workerCategory?.toLowerCase().includes(lower)) fields.push('workerCategory');
   if (doc.description?.toLowerCase().includes(lower)) fields.push('description');
-  if ((doc.skills as string[] | undefined)?.some((s) => s.toLowerCase().includes(lower)))
+  if ((doc.skills ?? []).some((s) => s.toLowerCase().includes(lower)))
     fields.push('skills');
   return fields;
 }
@@ -499,7 +535,7 @@ function detectMatchedFields(doc: Record<string, any>, q: string): string[] {
  * Weights: text-match 0.35 · rating 0.40 · proximity 0.25
  */
 function computeDocScore(
-  doc: Record<string, any>,
+  doc: GenericWorkerDoc,
   q: string,
   distanceKm: number | null,
   radiusInKm: number,
@@ -566,9 +602,9 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
       };
       const result = await searchAndFilterInMemoryWorkers(memFilter);
       total = result.total;
-      workers = result.workers.map((u: any) => ({
-        id: u._id,
-        name: u.name,
+      workers = result.workers.map((u: GenericWorkerDoc) => ({
+        id: normalizeWorkerId(u._id),
+        name: normalizeWorkerName(u.name),
         workerCategory: u.workerCategory ?? 'general',
         dailyRate: u.dailyRate ?? null,
         skills: u.skills ?? [],
@@ -576,9 +612,9 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
         reviewCount: u.reviewCount ?? 0,
         isVerified: u.isVerified ?? false,
         is_available: u.is_available ?? false,
-        distanceKm: u.distanceKm,
-        relevanceScore: u.relevanceScore,
-        matchedOn: u.matchedOn,
+        distanceKm: u.distanceKm ?? null,
+        relevanceScore: u.relevanceScore ?? 0,
+        matchedOn: u.matchedOn ?? [],
         location: {
           city: u.location?.city ?? 'Unknown',
           latitude: u.location?.latitude ?? 0,
@@ -617,11 +653,11 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
         ]);
 
         total = countResult[0]?.total ?? 0;
-        workers = docs.map((doc: any) => {
+        workers = docs.map((doc: GenericWorkerDoc) => {
           const distKm = parseFloat(((doc.distanceMeters ?? 0) / 1000).toFixed(2));
           return {
             id: String(doc._id),
-            name: doc.name,
+            name: normalizeWorkerName(doc.name),
             workerCategory: doc.workerCategory ?? 'general',
             dailyRate: doc.dailyRate ?? null,
             skills: doc.skills ?? [],
@@ -654,19 +690,19 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
         ]);
 
         total = countResult;
-        workers = docs.map((doc: any) => ({
+        workers = docs.map((doc: GenericWorkerDoc) => ({
           id: String(doc._id),
-          name: doc.name,
-          workerCategory: (doc as any).workerCategory ?? 'general',
-          dailyRate: (doc as any).dailyRate ?? null,
-          skills: (doc as any).skills ?? [],
+          name: normalizeWorkerName(doc.name),
+          workerCategory: doc.workerCategory ?? 'general',
+          dailyRate: doc.dailyRate ?? null,
+          skills: doc.skills ?? [],
           ratings: doc.ratings ?? 5,
           reviewCount: doc.reviewCount ?? 0,
-          isVerified: doc.isVerified,
-          is_available: (doc as any).is_available ?? false,
+          isVerified: doc.isVerified ?? false,
+          is_available: doc.is_available ?? false,
           distanceKm: null,
-          relevanceScore: computeDocScore(doc as any, q, null, radiusInKm),
-          matchedOn: detectMatchedFields(doc as any, q),
+          relevanceScore: computeDocScore(doc, q, null, radiusInKm),
+          matchedOn: detectMatchedFields(doc, q),
           location: {
             city: doc.location?.city ?? 'Unknown',
             latitude: doc.location?.latitude ?? 0,
@@ -694,11 +730,11 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
     };
 
     res.status(200).json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in searchAndFilterWorkers:', error);
     res.status(500).json({
       message: 'Server error while searching workers',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
@@ -842,9 +878,9 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
       });
 
       total = result.total;
-      workers = result.workers.map((u: any) => ({
-        id: u._id,
-        name: u.name,
+      workers = result.workers.map((u: GenericWorkerDoc) => ({
+        id: normalizeWorkerId(u._id),
+        name: normalizeWorkerName(u.name),
         workerCategory: u.workerCategory ?? category,
         dailyWageRate: u.dailyRate ?? null,
         skills: u.skills ?? [],
@@ -853,7 +889,7 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
         isVerified: u.isVerified ?? false,
         is_online: u.is_online ?? false,
         is_available: u.is_available ?? false,
-        distanceKm: u.distanceKm,
+        distanceKm: u.distanceKm ?? 0,
         currentLocation: {
           latitude: u.location?.latitude ?? 0,
           longitude: u.location?.longitude ?? 0,
@@ -893,7 +929,7 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
         .limit(limit)
         .lean();
 
-      workers = docs.map((doc: any) => {
+      workers = docs.map((doc: GenericWorkerDoc) => {
         const workerLat: number = doc.location?.latitude ?? 0;
         const workerLon: number = doc.location?.longitude ?? 0;
         const dLat = ((workerLat - latitude) * Math.PI) / 180;
@@ -907,7 +943,7 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
 
         return {
           id: String(doc._id),
-          name: doc.name,
+          name: normalizeWorkerName(doc.name),
           workerCategory: doc.workerCategory ?? category,
           dailyWageRate: doc.dailyRate ?? null,
           skills: doc.skills ?? [],
@@ -938,11 +974,11 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
     };
 
     res.status(200).json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getNearestAvailableWorkers:', error);
     res.status(500).json({
       message: 'Server error while fetching nearest available workers',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : 'Internal server error',
     });
   }
 };
