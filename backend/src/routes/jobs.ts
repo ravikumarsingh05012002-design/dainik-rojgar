@@ -11,3 +11,4 @@ router.post('/requirements', authMiddleware, createJobRequirement);
 router.post('/:id/apply', authMiddleware, applyJob);
 
 export default router;
+

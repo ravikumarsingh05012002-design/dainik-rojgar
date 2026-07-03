@@ -161,7 +161,7 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
       });
 
       total = result.total;
-      workers = result.workers.map((u) => ({
+      workers = result.workers.map((u: any) => ({
         id: u._id,
         name: u.name,
         workerCategory: u.workerCategory ?? 'general',
@@ -222,7 +222,7 @@ export const getNearbyAvailableWorkers = async (req: Request, res: Response): Pr
         .limit(limit)
         .lean();
 
-      workers = docs.map((u) => {
+      workers = docs.map((u: any) => {
         // Calculate distance for response — re-use Haversine on returned docs
         const workerLat: number = u.location?.latitude ?? 0;
         const workerLon: number = u.location?.longitude ?? 0;
@@ -566,7 +566,7 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
       };
       const result = await searchAndFilterInMemoryWorkers(memFilter);
       total = result.total;
-      workers = result.workers.map((u) => ({
+      workers = result.workers.map((u: any) => ({
         id: u._id,
         name: u.name,
         workerCategory: u.workerCategory ?? 'general',
@@ -617,7 +617,7 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
         ]);
 
         total = countResult[0]?.total ?? 0;
-        workers = docs.map((doc) => {
+        workers = docs.map((doc: any) => {
           const distKm = parseFloat(((doc.distanceMeters ?? 0) / 1000).toFixed(2));
           return {
             id: String(doc._id),
@@ -654,7 +654,7 @@ export const searchAndFilterWorkers = async (req: Request, res: Response): Promi
         ]);
 
         total = countResult;
-        workers = docs.map((doc) => ({
+        workers = docs.map((doc: any) => ({
           id: String(doc._id),
           name: doc.name,
           workerCategory: (doc as any).workerCategory ?? 'general',
@@ -842,7 +842,7 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
       });
 
       total = result.total;
-      workers = result.workers.map((u) => ({
+      workers = result.workers.map((u: any) => ({
         id: u._id,
         name: u.name,
         workerCategory: u.workerCategory ?? category,
@@ -946,3 +946,4 @@ export const getNearestAvailableWorkers = async (req: Request, res: Response): P
     });
   }
 };
+

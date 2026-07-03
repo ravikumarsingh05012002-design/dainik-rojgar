@@ -16,3 +16,4 @@ router.post('/verify-otp', verifyOTPAndLogin);
 router.patch('/switch-role', authMiddleware, switchRole);
 
 export default router;
+

@@ -20,3 +20,4 @@ router.post('/:id/navigation', authMiddleware, updateEmployerLiveLocation);
 router.get('/:id/navigation', authMiddleware, getBookingNavigationPayload);
 
 export default router;
+

@@ -703,3 +703,4 @@ export const getBookingNavigationPayload = async (req: Request, res: Response): 
     });
   }
 };
+

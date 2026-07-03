@@ -325,3 +325,4 @@ export const createJobRequirement = async (req: Request, res: Response): Promise
     });
   }
 };
+
