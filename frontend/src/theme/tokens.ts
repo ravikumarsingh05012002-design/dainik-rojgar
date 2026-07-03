@@ -33,6 +33,7 @@ export const colors = {
 
   // Text
   textPrimary: '#111827', // dark charcoal
+  text: '#111827',
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
   textOnPrimary: '#111827', // dark charcoal on yellow (contrast requirement)
@@ -65,9 +66,11 @@ export const typography = {
     xs: 12,
     sm: 14,
     base: 16,
+    md: 16,
     lg: 18,
     xl: 20,
     xxl: 24,
+    xxxl: 32,
     display: 32,
   },
   lineHeight: {
@@ -97,6 +100,9 @@ export const spacing = {
 export const radius = {
   sm: 8,
   md: 12,
+  badge: 12,
+  input: 12,
+  button: 16,
   card: 16, // standard for every interactive card
   pill: 999, // toggles, chips, geo pill
 } as const;

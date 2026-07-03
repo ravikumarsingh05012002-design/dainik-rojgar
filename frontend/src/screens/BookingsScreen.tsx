@@ -68,7 +68,7 @@ export default function BookingsScreen() {
     try {
       // In a real app, you'd call different endpoints based on role
       // For now, using a mock implementation
-      const response = await bookingService.getMyBookings();
+      const response: any = await bookingService.getMyBookings();
       setBookings(response.bookings || []);
     } catch (err: any) {
       console.error('Failed to fetch bookings:', err);

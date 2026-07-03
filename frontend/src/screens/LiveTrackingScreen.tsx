@@ -21,6 +21,12 @@ const CARD_COLLAPSED_HEIGHT = 260; // ~30% of a typical screen
 const CARD_EXPANDED_HEIGHT = 420;
 
 const MILESTONE_ORDER: MilestoneKey[] = ['accepted', 'arrived', 'started', 'completed'];
+const MILESTONE_STATUS_MAP = {
+  accepted: 'accepted',
+  arrived: 'en_route',
+  started: 'ongoing',
+  completed: 'completed',
+} as const;
 
 /**
  * Live Job Tracking & Navigation Map Screen.
@@ -150,7 +156,7 @@ export default function LiveTrackingScreen() {
     try {
       const nextMilestone = MILESTONE_ORDER[milestoneIndex + 1];
       await bookingService.updateBookingStatus(bookingId, {
-        status: nextMilestone,
+        status: MILESTONE_STATUS_MAP[nextMilestone],
       });
       setMilestoneIndex((i) => Math.min(i + 1, MILESTONE_ORDER.length - 1));
     } catch (err: any) {

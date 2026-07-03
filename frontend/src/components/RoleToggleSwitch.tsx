@@ -5,8 +5,11 @@ import { colors, radius, spacing, typography } from '../theme';
 export type ToggleRole = 'employer' | 'worker';
 
 interface RoleToggleSwitchProps {
-  value: ToggleRole;
-  onChange: (role: ToggleRole) => void;
+  value?: ToggleRole;
+  onChange?: (role: ToggleRole) => void;
+  currentRole?: ToggleRole;
+  onSwitch?: (role: ToggleRole) => void | Promise<void>;
+  disabled?: boolean;
 }
 
 /**
@@ -15,18 +18,33 @@ interface RoleToggleSwitchProps {
  * The active side slides smoothly with a vivid #FFC107 fill; the label
  * on the active side renders in dark charcoal for contrast.
  */
-export default function RoleToggleSwitch({ value, onChange }: RoleToggleSwitchProps) {
+export default function RoleToggleSwitch({
+  value,
+  onChange,
+  currentRole,
+  onSwitch,
+  disabled = false,
+}: RoleToggleSwitchProps) {
+  const selectedRole = value ?? currentRole ?? 'employer';
+  const handleChange = (role: ToggleRole) => {
+    if (disabled) {
+      return;
+    }
+
+    onChange?.(role);
+    onSwitch?.(role);
+  };
   const [trackWidth, setTrackWidth] = useState(0);
-  const slideAnim = useRef(new Animated.Value(value === 'worker' ? 1 : 0)).current;
+  const slideAnim = useRef(new Animated.Value(selectedRole === 'worker' ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.spring(slideAnim, {
-      toValue: value === 'worker' ? 1 : 0,
+      toValue: selectedRole === 'worker' ? 1 : 0,
       useNativeDriver: true,
       speed: 16,
       bounciness: 6,
     }).start();
-  }, [value, slideAnim]);
+  }, [selectedRole, slideAnim]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     setTrackWidth(e.nativeEvent.layout.width);
@@ -49,14 +67,14 @@ export default function RoleToggleSwitch({ value, onChange }: RoleToggleSwitchPr
         />
       )}
 
-      <Pressable style={styles.option} onPress={() => onChange('employer')}>
-        <Text style={[styles.optionLabel, value === 'employer' && styles.optionLabelActive]}>
+      <Pressable style={styles.option} onPress={() => handleChange('employer')} disabled={disabled}>
+        <Text style={[styles.optionLabel, selectedRole === 'employer' && styles.optionLabelActive]}>
           🧑‍💼  I want to Hire
         </Text>
       </Pressable>
 
-      <Pressable style={styles.option} onPress={() => onChange('worker')}>
-        <Text style={[styles.optionLabel, value === 'worker' && styles.optionLabelActive]}>
+      <Pressable style={styles.option} onPress={() => handleChange('worker')} disabled={disabled}>
+        <Text style={[styles.optionLabel, selectedRole === 'worker' && styles.optionLabelActive]}>
           🛠️  I want Work
         </Text>
       </Pressable>

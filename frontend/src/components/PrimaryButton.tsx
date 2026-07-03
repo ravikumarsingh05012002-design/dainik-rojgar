@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { colors, radius, spacing, typography } from '../theme';
 
-type Variant = 'primary' | 'outline' | 'ghost';
+type Variant = 'primary' | 'outline' | 'ghost' | 'secondary';
 
 interface PrimaryButtonProps {
   label: string;
@@ -44,7 +44,7 @@ export default function PrimaryButton({
       style={({ pressed }) => [
         styles.base,
         variant === 'primary' && styles.primary,
-        variant === 'outline' && styles.outline,
+        (variant === 'outline' || variant === 'secondary') && styles.outline,
         variant === 'ghost' && styles.ghost,
         fullWidth && styles.fullWidth,
         pressed && !disabled && styles.pressed,

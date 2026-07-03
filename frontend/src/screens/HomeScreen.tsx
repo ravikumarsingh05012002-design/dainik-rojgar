@@ -256,12 +256,6 @@ export default function HomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-            </Card>
-          )}
-        />
-      </ScrollView>
-    </SafeAreaView>
-  );
 }
 
 const styles = StyleSheet.create({

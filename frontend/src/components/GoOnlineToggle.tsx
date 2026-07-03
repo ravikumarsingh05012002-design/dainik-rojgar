@@ -46,6 +46,7 @@ export default function GoOnlineToggle({ isOnline, onToggle, disabled = false }:
       accessibilityRole="switch" 
       accessibilityState={{ checked: isOnline }}
     >
+      <Animated.View style={[styles.track, { backgroundColor: trackColor, opacity: disabled ? 0.6 : 1 }]}> 
         <Text style={[styles.stateLabel, styles.offLabel, isOnline && styles.dimmedLabel]}>OFFLINE</Text>
         <Text style={[styles.stateLabel, styles.onLabel, !isOnline && styles.dimmedLabel]}>ONLINE</Text>
         <Animated.View style={[styles.thumb, { transform: [{ translateX }] }]}>
