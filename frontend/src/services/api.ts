@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 /**
  * API Configuration
@@ -10,7 +11,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * To use production, update PRODUCTION_API_URL with your Railway URL
  */
 
-const DEVELOPMENT_API_URL = 'http://localhost:5000/api';
+const DEVELOPMENT_API_URL = Platform.select({
+  android: 'http://10.0.2.2:5000/api',
+  default: 'http://localhost:5000/api',
+}) as string;
 const PRODUCTION_API_URL = 'https://dainik-rojgar-production.up.railway.app/api';
 
 // Detect environment - React Native's __DEV__ is available globally

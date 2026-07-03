@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -29,8 +29,35 @@ export default function WorkerHomeScreen() {
   const [loading, setLoading] = useState(false);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [earnings, setEarnings] = useState({ today: 0, hours: 0, completed: 0, rating: 4.5 });
-  const [pollingInterval, setPollingInterval] = useState<any>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [workerName, setWorkerName] = useState('Worker');
+    const stopPolling = React.useCallback(() => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }, []);
+
+    const startPolling = React.useCallback(() => {
+      stopPolling();
+      pollingIntervalRef.current = setInterval(() => {
+        fetchPendingBookings();
+      }, 5000);
+    }, [stopPolling]);
+
+    const fetchWorkerProfile = async () => {
+      try {
+        const response: any = await userService.getProfile();
+        const name = response?.user?.name || response?.name;
+        if (name) {
+          setWorkerName(name);
+        }
+      } catch (err: any) {
+        // Keep default fallback name; profile loading failure is non-blocking.
+        console.error('Error fetching worker profile:', err.message);
+      }
+    };
+
   const fadeIn = React.useRef(new Animated.Value(0)).current;
   const translateY = React.useRef(new Animated.Value(16)).current;
 
@@ -73,17 +100,11 @@ export default function WorkerHomeScreen() {
 
       if (next) {
         // Start polling for incoming jobs when going online
-        const interval = setInterval(() => {
-          fetchPendingBookings();
-        }, 5000); // Poll every 5 seconds
-        setPollingInterval(interval);
+        startPolling();
         fetchPendingBookings(); // Fetch immediately
       } else {
         // Stop polling when going offline
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null);
-        }
+        stopPolling();
         setIncomingJob(null);
       }
     } catch (err: any) {
@@ -132,20 +153,17 @@ export default function WorkerHomeScreen() {
   // Load initial data on mount
   useFocusEffect(
     React.useCallback(() => {
+      fetchWorkerProfile();
+
       if (isOnline) {
         fetchPendingBookings();
-        const interval = setInterval(() => {
-          fetchPendingBookings();
-        }, 5000);
-        setPollingInterval(interval);
+        startPolling();
       }
 
       return () => {
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-        }
+        stopPolling();
       };
-    }, [isOnline])
+    }, [isOnline, startPolling, stopPolling])
   );
 
   return (

@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-  FlatList,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -9,8 +8,8 @@ import {
   Pressable,
   View,
   ActivityIndicator,
-  Alert,
   Animated,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import GeoPill from '../components/GeoPill';
@@ -58,6 +57,8 @@ export default function HomeScreen() {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [location, setLocation] = useState<Coordinates>({ latitude: 26.8, longitude: 75.8 }); // Default: Jaipur
   const [locationName, setLocationName] = useState('Jaipur, Rajasthan');
   const fadeIn = React.useRef(new Animated.Value(0)).current;
@@ -91,8 +92,11 @@ export default function HomeScreen() {
   }, []);
 
   // Fetch nearest available workers
-  const fetchWorkers = async () => {
-    setLoading(true);
+  const fetchWorkers = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true;
+    if (!silent) {
+      setLoading(true);
+    }
     setError('');
 
     try {
@@ -106,19 +110,20 @@ export default function HomeScreen() {
 
       // Transform API response to match component expectations
       const transformedWorkers = (response.workers || []).map((w: any, idx: number) => ({
-        id: w._id || `w${idx}`,
+        id: w.id || w._id || `w${idx}`,
         name: w.name || 'Unknown Worker',
         profession: w.workerCategory || 'Helper',
-        rating: w.rating || 4.5,
-        completedJobs: w.completedJobs || 0,
+        rating: w.ratings || w.rating || 4.5,
+        completedJobs: w.reviewCount || w.completedJobs || 0,
         distance: w.distanceKm || 0,
-        price: w.dailyRate || 500,
+        price: w.dailyWageRate || w.dailyRate || 500,
         available: w.is_available && w.is_online,
         category: w.workerCategory || 'helper',
         profileColor: ['#FFE7A0', '#FFDD8A', '#FFEFC2'][idx % 3],
       }));
 
       setWorkers(transformedWorkers);
+      setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message || 'Failed to load workers';
       setError(errorMsg);
@@ -127,7 +132,13 @@ export default function HomeScreen() {
       setWorkers([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onPullRefresh = () => {
+    setRefreshing(true);
+    fetchWorkers({ silent: true });
   };
 
   // Fetch workers on mount and when category changes
@@ -183,7 +194,18 @@ export default function HomeScreen() {
         </View>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onPullRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <Animated.View style={{ opacity: fadeIn, transform: [{ translateY }] }}>
         <Card style={styles.heroCard} floating>
           <View style={styles.heroTopRow}>
@@ -198,6 +220,7 @@ export default function HomeScreen() {
           <Text style={styles.heroSubtitle}>
             Real-time matching based on your location, category, rating and availability.
           </Text>
+          {lastUpdated ? <Text style={styles.lastUpdated}>Last updated: {lastUpdated}</Text> : null}
           <View style={styles.quickActionsRow}>
             <Pressable style={styles.quickAction} onPress={() => fetchWorkers()}>
               <Text style={styles.quickActionIcon}>⟳</Text>
@@ -445,6 +468,12 @@ const styles = StyleSheet.create({
     lineHeight: typography.lineHeight.sm,
     marginBottom: spacing.base,
     fontFamily: typography.fontFamily.medium,
+  },
+  lastUpdated: {
+    color: '#9CA3AF',
+    fontSize: typography.size.xs,
+    fontFamily: typography.fontFamily.medium,
+    marginBottom: spacing.base,
   },
   heroBadge: {
     borderRadius: radius.pill,
