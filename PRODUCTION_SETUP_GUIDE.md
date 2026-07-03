@@ -7,6 +7,7 @@ Complete step-by-step guide to deploy your app to production.
 ## ✅ Pre-Setup Verification
 
 Before starting, ensure:
+
 - [x] Backend code is complete (5,998 lines)
 - [x] Frontend code is complete (465 lines)
 - [x] Firebase OTP system implemented
@@ -37,7 +38,7 @@ You'll need accounts on these platforms (all have free tiers):
 
 ### 1.1 Create Firebase Project
 
-1. **Open:** https://console.firebase.google.com/
+1. **Open:** <https://console.firebase.google.com/>
 2. **Click:** "Add project" or "Create a project"
 3. **Enter project name:** `dainik-rojgar` or `dainik-rojgar-prod`
 4. **Click:** Continue
@@ -90,7 +91,8 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour-Actual-Key\n-----END PRI
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 ```
 
-⚠️ **Important:** 
+⚠️ **Important:**
+
 - Keep the `\n` in the private key
 - Wrap private key in double quotes
 - Don't add extra spaces
@@ -103,7 +105,7 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.c
 
 ### 2.1 Create MongoDB Account
 
-1. **Open:** https://www.mongodb.com/cloud/atlas
+1. **Open:** <https://www.mongodb.com/cloud/atlas>
 2. **Click:** "Try Free" or "Sign Up"
 3. **Choose:** Email/password or Google sign-in
 4. **Verify:** Your email address
@@ -113,7 +115,7 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.c
 1. **After login →** Click "Build a Database"
 2. **Select:** "M0 FREE" (the free tier)
 3. **Cloud Provider:** AWS
-4. **Region:** 
+4. **Region:**
    - For India: `ap-south-1 (Mumbai)`
    - For global: `us-east-1 (N. Virginia)`
 5. **Cluster Name:** `dainik-rojgar-cluster`
@@ -160,16 +162,19 @@ mongodb+srv://dainikrojgar_admin:<password>@dainik-rojgar-cluster.xxxxx.mongodb.
 Replace `<password>` and add database name:
 
 **Before:**
+
 ```
 mongodb+srv://dainikrojgar_admin:<password>@cluster.mongodb.net/?retryWrites=true&w=majority
 ```
 
 **After:**
+
 ```
 mongodb+srv://dainikrojgar_admin:YOUR_ACTUAL_PASSWORD@cluster.mongodb.net/dainik-rojgar?retryWrites=true&w=majority
 ```
 
 Changes:
+
 1. Replace `<password>` with actual password
 2. Add `/dainik-rojgar` before `?`
 
@@ -195,6 +200,7 @@ npm start
 ```
 
 **Expected output:**
+
 ```
 ==================================================
 ✓ Firebase Admin SDK initialized successfully
@@ -208,11 +214,13 @@ npm start
 ### 3.2 Test Health Endpoint
 
 Open browser or use curl:
+
 ```bash
 curl http://localhost:5000/api/health
 ```
 
 **Expected:**
+
 ```json
 {"status":"Server is running","timestamp":"2026-07-03T..."}
 ```
@@ -226,6 +234,7 @@ curl -X POST http://localhost:5000/api/auth/send-otp \
 ```
 
 **Expected (development mode):**
+
 ```json
 {
   "message": "OTP sent successfully",
@@ -235,6 +244,7 @@ curl -X POST http://localhost:5000/api/auth/send-otp \
 ```
 
 Check terminal for OTP log:
+
 ```
 ==================================================
 📱 DEVELOPMENT MODE - OTP for +919876543210
@@ -264,7 +274,7 @@ git push -u origin main
 
 ### 4.2 Create Railway Account
 
-1. **Open:** https://railway.app/
+1. **Open:** <https://railway.app/>
 2. **Click:** "Start a New Project" or "Login"
 3. **Choose:** "Login with GitHub"
 4. **Authorize:** Railway to access your GitHub
@@ -310,6 +320,7 @@ OTP_EXPIRY_MINUTES=10
 ```
 
 **Generate JWT Secret:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -323,6 +334,7 @@ Railway will automatically deploy. Monitor in Deployments tab.
 ### 4.6 Get Your URL
 
 After deployment:
+
 1. **Go to:** Settings tab
 2. **Find:** "Domains" section
 3. **Your URL:** `https://dainik-rojgar-production.up.railway.app`
@@ -336,6 +348,7 @@ curl https://your-railway-url.up.railway.app/api/health
 ```
 
 **Expected:**
+
 ```json
 {"status":"Server is running","timestamp":"2026-07-03T..."}
 ```
@@ -370,6 +383,7 @@ npm start
 ```
 
 In the console, you should see:
+
 ```
 🌐 API Mode: Development
 📡 API URL: http://localhost:5000/api
@@ -418,10 +432,11 @@ For production build, it will use Railway URL.
 
 ---
 
-## 🎉 Deployment Complete!
+## 🎉 Deployment Complete
 
 Your app is now live on:
-- **Backend:** Railway (https://your-app.up.railway.app)
+
+- **Backend:** Railway (<https://your-app.up.railway.app>)
 - **Database:** MongoDB Atlas (Cloud)
 - **Authentication:** Firebase SMS OTP
 
@@ -446,16 +461,19 @@ Your app is now live on:
 ## 🔍 Monitoring
 
 ### Railway Logs
+
 1. **Go to:** Railway Dashboard → Your Project → Logs
 2. **Monitor:** Real-time server logs
 3. **Check for:** Errors or warnings
 
 ### MongoDB Atlas
+
 1. **Go to:** Atlas Dashboard → Metrics
 2. **Monitor:** Operations, connections, storage
 3. **Set alerts** for high usage
 
 ### Firebase Console
+
 1. **Go to:** Firebase Console → Authentication
 2. **Monitor:** User sign-ins
 3. **Check:** Phone authentication stats
@@ -465,21 +483,25 @@ Your app is now live on:
 ## 🐛 Troubleshooting
 
 ### Backend Won't Start
+
 - Check Railway logs for errors
 - Verify all environment variables are set
 - Check MongoDB connection string
 
 ### Firebase Errors
+
 - Verify FIREBASE_PRIVATE_KEY has `\n` escaped
 - Check project_id matches Firebase Console
 - Ensure Phone authentication is enabled
 
 ### MongoDB Connection Failed
+
 - Verify password is correct
 - Check network access allows 0.0.0.0/0
 - Ensure database user has permissions
 
 ### OTP Not Sending
+
 - In development: Check terminal logs
 - In production: Will need Twilio integration
 - Verify Firebase credentials are correct
@@ -489,18 +511,21 @@ Your app is now live on:
 ## 💡 Next Steps
 
 ### For Production SMS (Optional)
+
 1. Create Twilio account
 2. Get phone number
 3. Update `firebase.ts` with Twilio code
 4. Add Twilio credentials to Railway
 
 ### For App Store Release
+
 1. Build production APK/IPA
 2. Test on real devices
 3. Prepare app store assets
 4. Submit for review
 
 ### For Scaling
+
 1. Upgrade MongoDB to M10 (when > 500 users)
 2. Add Redis for OTP storage
 3. Enable Railway auto-scaling
@@ -511,14 +536,16 @@ Your app is now live on:
 ## 📞 Support
 
 **Documentation:**
+
 - Firebase: [backend/FIREBASE_SETUP.md](backend/FIREBASE_SETUP.md)
 - MongoDB: [backend/MONGODB_SETUP.md](backend/MONGODB_SETUP.md)
 - Railway: [backend/RAILWAY_DEPLOYMENT.md](backend/RAILWAY_DEPLOYMENT.md)
 
 **Quick Help:**
-- Railway: https://railway.app/help
-- MongoDB: https://docs.atlas.mongodb.com/
-- Firebase: https://firebase.google.com/support
+
+- Railway: <https://railway.app/help>
+- MongoDB: <https://docs.atlas.mongodb.com/>
+- Firebase: <https://firebase.google.com/support>
 
 ---
 

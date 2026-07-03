@@ -10,11 +10,13 @@ Creates a new job requirement posted by an Employer (Malik). This endpoint valid
 ## Request
 
 ### Endpoint
+
 ```
 POST /api/jobs/requirements
 ```
 
 ### Authentication
+
 **Required:** Yes (Bearer Token in Authorization header)
 
 ```
@@ -22,6 +24,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### Headers
+
 ```
 Content-Type: application/json
 Authorization: Bearer <jwt_token>
@@ -159,7 +162,7 @@ curl -X POST http://localhost:5000/api/jobs/requirements \
 ## Validation Rules
 
 | Field | Type | Constraints | Example |
-|-------|------|-----------|---------|
+| ------- | ------ | ----------- | --------- |
 | `employerId` | string | Non-empty, valid MongoDB ID | `"507f1f77bcf86cd799439011"` |
 | `workerCategory` | string | Non-empty | `"mason"`, `"painter"`, `"helper"` |
 | `requiredWorkersCount` | number | Integer > 0 | `3`, `5`, `10` |
@@ -175,22 +178,26 @@ curl -X POST http://localhost:5000/api/jobs/requirements \
 ## Features
 
 ✅ **Robust Validation**
+
 - All required fields validated with detailed error messages
 - Geographic coordinate validation (latitude/longitude ranges)
 - Type safety with TypeScript interfaces
 
 ✅ **Error Handling**
+
 - Structured JSON error responses
 - Specific HTTP status codes (400, 401, 500)
 - Development vs. production error visibility
 - MongoDB-specific error handling (ValidationError, CastError)
 
 ✅ **Database Flexibility**
+
 - Works with both MongoDB and in-memory store
 - Automatic fallback if database is unavailable
 - Proper geolocation storage with Point coordinates
 
 ✅ **Production Ready**
+
 - Async/await for clean code flow
 - Proper middleware integration
 - Authentication required
@@ -280,7 +287,7 @@ postJobRequirement(jobRequirement, 'your_jwt_token');
 ## Status Codes
 
 | Code | Meaning | When Used |
-|------|---------|-----------|
+| ------ | --------- | ----------- |
 | 201 | Created | Job requirement successfully created |
 | 400 | Bad Request | Validation errors or invalid data format |
 | 401 | Unauthorized | Missing or invalid authentication token |

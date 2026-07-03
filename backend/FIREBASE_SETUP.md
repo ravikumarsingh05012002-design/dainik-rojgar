@@ -5,6 +5,7 @@ Complete guide to configure Firebase for sending OTP via SMS in Dainik Rojgar ap
 ---
 
 ## Prerequisites
+
 - Google account
 - Firebase project (free tier available)
 - Credit card (required for SMS, but won't be charged on free tier with reasonable usage)
@@ -17,7 +18,7 @@ Complete guide to configure Firebase for sending OTP via SMS in Dainik Rojgar ap
 2. Click **"Add project"**
 3. Project name: `dainik-rojgar` or `dainik-rojgar-prod`
 4. Click **"Continue"**
-5. **Google Analytics**: 
+5. **Google Analytics**:
    - Toggle OFF (not needed for SMS)
    - Or keep ON for usage analytics
 6. Click **"Create project"**
@@ -69,6 +70,7 @@ Open the downloaded JSON file. You'll see:
 ```
 
 **Extract these 3 values:**
+
 1. `project_id` → Use for `FIREBASE_PROJECT_ID`
 2. `private_key` → Use for `FIREBASE_PRIVATE_KEY` (keep the `\n` escaped)
 3. `client_email` → Use for `FIREBASE_CLIENT_EMAIL`
@@ -77,7 +79,7 @@ Open the downloaded JSON file. You'll see:
 
 ## Step 5: Configure Environment Variables
 
-### For Local Development (.env):
+### For Local Development (.env)
 
 ```env
 FIREBASE_PROJECT_ID=dainik-rojgar
@@ -86,11 +88,12 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk-abc123@dainik-rojgar.iam.gserviceaccount
 ```
 
 ⚠️ **Important Notes**:
+
 - Keep the `\n` in the private key (they represent newlines)
 - Wrap FIREBASE_PRIVATE_KEY in double quotes
 - Don't add extra spaces or newlines
 
-### For Production (Railway):
+### For Production (Railway)
 
 Add the same variables in Railway Dashboard → Environment Variables
 
@@ -101,20 +104,25 @@ Add the same variables in Railway Dashboard → Environment Variables
 Firebase Admin SDK alone cannot send SMS. You need:
 
 ### Option A: Use Twilio (Recommended)
+
 1. Create [Twilio account](https://www.twilio.com/try-twilio)
 2. Get phone number
 3. Install Twilio SDK:
+
    ```bash
    npm install twilio
    ```
+
 4. Update `backend/src/utils/firebase.ts` to use Twilio
 
 ### Option B: Use Firebase Extensions
+
 1. Firebase Console → Extensions
 2. Install **"Trigger Email from Firestore"** (for email OTP)
 3. Or use third-party SMS gateway
 
 ### Option C: Development Mode (Current)
+
 - OTP is logged to console
 - No actual SMS sent
 - Perfect for testing
@@ -155,6 +163,7 @@ export async function sendOTP(phoneNumber: string, otp: string): Promise<boolean
 ```
 
 Add to .env:
+
 ```env
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxx
@@ -165,25 +174,29 @@ TWILIO_PHONE_NUMBER=+1234567890
 
 ## Step 8: Test Firebase Integration
 
-### Start Backend:
+### Start Backend
+
 ```bash
 cd backend
 npm start
 ```
 
-### Check Logs:
+### Check Logs
+
 ```
 ✓ Firebase Admin SDK initialized successfully
 ```
 
-### Test Send OTP:
+### Test Send OTP
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/send-otp \
   -H "Content-Type: application/json" \
   -d '{"phoneNumber": "+919876543210"}'
 ```
 
-### Expected Response (Development):
+### Expected Response (Development)
+
 ```json
 {
   "message": "OTP sent successfully",
@@ -192,7 +205,8 @@ curl -X POST http://localhost:5000/api/auth/send-otp \
 }
 ```
 
-### Check Console Logs:
+### Check Console Logs
+
 ```
 ==================================================
 📱 DEVELOPMENT MODE - OTP for +919876543210
@@ -204,7 +218,8 @@ curl -X POST http://localhost:5000/api/auth/send-otp \
 
 ## Step 9: Production Deployment
 
-### Railway:
+### Railway
+
 1. Add Firebase variables to Railway Environment Variables
 2. Set `NODE_ENV=production` (OTP won't be logged)
 3. Deploy backend
@@ -233,6 +248,7 @@ Already implemented in `authController.ts`:
 - **Max verification attempts**: 3 per OTP
 
 Configure in `.env`:
+
 ```env
 OTP_RATE_LIMIT=5
 OTP_EXPIRY_MINUTES=10
@@ -242,18 +258,21 @@ OTP_EXPIRY_MINUTES=10
 
 ## Cost Estimation
 
-### Firebase Free Tier (Spark Plan):
+### Firebase Free Tier (Spark Plan)
+
 - ✅ Authentication: Unlimited
 - ✅ Firestore reads: 50,000/day
 - ✅ Storage: 1 GB
 - ⚠️ **SMS not included** - Need third-party service
 
-### Twilio Costs (for actual SMS):
+### Twilio Costs (for actual SMS)
+
 - Trial: $15 credit (200+ SMS)
 - Production: $0.0075 per SMS (Indian numbers)
 - Example: 1000 OTPs/month = ~$7.50
 
-### Recommended Budget:
+### Recommended Budget
+
 - Development: $0 (use console logging)
 - MVP (< 100 users): $5-10/month (Twilio trial)
 - Production (1000+ users): $20-50/month (Twilio paid)
@@ -263,25 +282,33 @@ OTP_EXPIRY_MINUTES=10
 ## Troubleshooting
 
 ### Firebase Initialization Failed
+
 **Error**: `Failed to initialize Firebase`
+
 - ✅ Check FIREBASE_PROJECT_ID is correct
 - ✅ Verify FIREBASE_PRIVATE_KEY has `\n` escaped
 - ✅ Ensure FIREBASE_CLIENT_EMAIL matches service account
 
 ### Invalid Private Key
+
 **Error**: `Error parsing private key`
+
 - ✅ Wrap private key in double quotes
 - ✅ Keep `\n` in the key (don't replace with actual newlines in .env)
 - ✅ Verify no extra spaces before/after
 
 ### OTP Not Sending (Production)
+
 **Current Setup**: Logs to console only
+
 - ✅ Integrate Twilio or SMS gateway
 - ✅ Update `sendOTP()` function in firebase.ts
 - ✅ Add SMS provider credentials to .env
 
 ### Authentication Errors
+
 **Error**: `Authentication failed`
+
 - ✅ Regenerate service account key
 - ✅ Verify project_id matches Firebase project
 - ✅ Check client_email is from correct project
@@ -290,23 +317,27 @@ OTP_EXPIRY_MINUTES=10
 
 ## Alternative SMS Providers
 
-### Twilio (Recommended):
+### Twilio (Recommended)
+
 - ✅ Reliable global coverage
 - ✅ Simple API
 - ✅ Good documentation
 - Cost: $0.0075/SMS (India)
 
-### AWS SNS:
+### AWS SNS
+
 - ✅ Pay-as-you-go
 - ✅ Integrated with AWS services
 - Cost: $0.00645/SMS (India)
 
-### MessageBird:
+### MessageBird
+
 - ✅ European alternative
 - ✅ Number verification included
 - Cost: Similar to Twilio
 
-### Kaleyra (India-specific):
+### Kaleyra (India-specific)
+
 - ✅ Local Indian provider
 - ✅ Better pricing for India
 - Cost: ₹0.15-0.25/SMS
@@ -344,7 +375,8 @@ OTP_EXPIRY_MINUTES=10
 
 ## Development vs Production
 
-### Development Mode (Current):
+### Development Mode (Current)
+
 ```typescript
 if (process.env.NODE_ENV === 'development') {
   console.log('OTP:', otp); // Logs to console
@@ -352,7 +384,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 ```
 
-### Production Mode (With Twilio):
+### Production Mode (With Twilio)
+
 ```typescript
 if (process.env.NODE_ENV === 'production') {
   await twilioClient.messages.create({
@@ -367,9 +400,9 @@ if (process.env.NODE_ENV === 'production') {
 
 ## Support Resources
 
-- **Firebase Docs**: https://firebase.google.com/docs/auth
-- **Firebase Console**: https://console.firebase.google.com
-- **Twilio Docs**: https://www.twilio.com/docs/sms
+- **Firebase Docs**: <https://firebase.google.com/docs/auth>
+- **Firebase Console**: <https://console.firebase.google.com>
+- **Twilio Docs**: <https://www.twilio.com/docs/sms>
 - **Stack Overflow**: `[firebase-authentication]` tag
 
 ---

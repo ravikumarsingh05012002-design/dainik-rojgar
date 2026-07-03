@@ -1,6 +1,7 @@
 # Railway Deployment Guide for Dainik Rojgar Backend
 
 ## Prerequisites
+
 - [Railway Account](https://railway.app/) (free tier available)
 - GitHub account with this repository pushed
 - MongoDB Atlas cluster (see MONGODB_SETUP.md)
@@ -49,14 +50,16 @@ OTP_RATE_LIMIT=5
 OTP_EXPIRY_MINUTES=10
 ```
 
-### Important Notes:
+### Important Notes
 
 1. **MONGODB_URI**: Get this from MongoDB Atlas (see MONGODB_SETUP.md)
 2. **JWT_SECRET**: Generate a strong random string:
+
    ```bash
    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
-3. **FIREBASE_PRIVATE_KEY**: 
+
+3. **FIREBASE_PRIVATE_KEY**:
    - Must keep the escaped newlines `\n`
    - Wrap the entire key in double quotes
    - Get from Firebase Console → Service Accounts
@@ -85,6 +88,7 @@ Railway will use `/api/health` to monitor your service (already implemented in s
 1. Railway automatically deploys on every push to main branch
 2. Monitor deployment logs in Railway Dashboard
 3. Once deployed, you'll get a public URL like:
+
    ```
    https://dainik-rojgar-backend-production.up.railway.app
    ```
@@ -94,11 +98,13 @@ Railway will use `/api/health` to monitor your service (already implemented in s
 ## Step 6: Test Deployment
 
 ### Check Health Endpoint
+
 ```bash
 curl https://your-railway-url.railway.app/api/health
 ```
 
 Expected response:
+
 ```json
 {
   "status": "Server is running",
@@ -107,6 +113,7 @@ Expected response:
 ```
 
 ### Test OTP Endpoint
+
 ```bash
 curl -X POST https://your-railway-url.railway.app/api/auth/send-otp \
   -H "Content-Type: application/json" \
@@ -118,13 +125,16 @@ curl -X POST https://your-railway-url.railway.app/api/auth/send-otp \
 ## Monitoring & Debugging
 
 ### View Logs
+
 - Railway Dashboard → Your Service → Logs tab
 - Real-time log streaming available
 
 ### Restart Service
+
 - Railway Dashboard → Your Service → Settings → Restart
 
 ### Rollback Deployment
+
 - Railway Dashboard → Deployments → Select previous deployment → Redeploy
 
 ---
@@ -135,9 +145,11 @@ curl -X POST https://your-railway-url.railway.app/api/auth/send-otp \
 2. Click **"Add Custom Domain"**
 3. Enter your domain (e.g., api.dainikrojgar.com)
 4. Add CNAME record to your DNS:
+
    ```
    CNAME  api  your-service.up.railway.app
    ```
+
 5. Wait for DNS propagation (~5-10 minutes)
 
 ---
@@ -153,6 +165,7 @@ git push origin main
 ```
 
 Railway will:
+
 1. Pull latest code
 2. Run `npm install && npm run build`
 3. Run `npm start`
@@ -163,6 +176,7 @@ Railway will:
 ## Scaling (Paid Plans)
 
 Railway offers:
+
 - **Vertical Scaling**: Increase CPU/RAM
 - **Horizontal Scaling**: Multiple instances
 - **Auto-scaling**: Based on traffic
@@ -186,16 +200,19 @@ Configure in: Settings → Resources
 ## Cost Estimation
 
 **Railway Free Tier:**
+
 - $5 free credit per month
 - ~500 hours of usage
 - Suitable for MVP/testing
 
 **Hobby Plan ($5/month):**
+
 - Unlimited usage
 - Better performance
 - Custom domains
 
 **Pro Plan ($20/month):**
+
 - Priority support
 - Advanced monitoring
 - Team features
@@ -205,21 +222,25 @@ Configure in: Settings → Resources
 ## Troubleshooting
 
 ### Deployment Fails
+
 - Check Railway logs for errors
 - Verify `package.json` has correct scripts
 - Ensure all dependencies are listed
 
 ### Environment Variables Not Working
+
 - Check variable names match exactly
 - Verify Firebase private key escaping
 - Restart service after adding variables
 
 ### MongoDB Connection Fails
+
 - Verify MONGODB_URI is correct
 - Check MongoDB Atlas IP whitelist (add 0.0.0.0/0 for Railway)
 - Ensure database user has correct permissions
 
 ### OTP Not Sending
+
 - Check Firebase credentials are correct
 - Verify FIREBASE_PRIVATE_KEY has proper newlines
 - Check Railway logs for Firebase initialization errors
@@ -238,7 +259,7 @@ Configure in: Settings → Resources
 
 ## Support
 
-- Railway Docs: https://docs.railway.app
-- Railway Discord: https://discord.gg/railway
-- MongoDB Atlas Support: https://www.mongodb.com/cloud/atlas/support
-- Firebase Support: https://firebase.google.com/support
+- Railway Docs: <https://docs.railway.app>
+- Railway Discord: <https://discord.gg/railway>
+- MongoDB Atlas Support: <https://www.mongodb.com/cloud/atlas/support>
+- Firebase Support: <https://firebase.google.com/support>

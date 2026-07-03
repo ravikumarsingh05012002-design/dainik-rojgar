@@ -11,6 +11,7 @@ Use this to track all the credentials you need during setup.
 **Project ID:** dainik-rojgar-dwa
 
 **Private Key:** (Full key stored in backend/.env)
+
 ```
 -----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDpf60lg2eggUfp
@@ -18,7 +19,7 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDpf60lg2eggUfp
 -----END PRIVATE KEY-----
 ```
 
-**Client Email:** firebase-adminsdk-fbsvc@dainik-rojgar-dwa.iam.gserviceaccount.com
+**Client Email:** <firebase-adminsdk-fbsvc@dainik-rojgar-dwa.iam.gserviceaccount.com>
 
 ---
 
@@ -31,11 +32,13 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDpf60lg2eggUfp
 **Password:** _________________________ (SAVE THIS!)
 
 **Connection String:**
+
 ```
 mongodb+srv://dainikrojgar_admin:YOUR_PASSWORD@cluster.mongodb.net/dainik-rojgar?retryWrites=true&w=majority
 ```
 
 **Full Connection String (filled):**
+
 ```
 _____________________________________________________________________
 ```
@@ -46,17 +49,20 @@ _____________________________________________________________________
 
 **Project Name:** _________________________
 
-**Deployment URL:** 
+**Deployment URL:**
+
 ```
 https://_________________________.up.railway.app
 ```
 
 **JWT Secret (generate with command):**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 **Generated JWT Secret:**
+
 ```
 583f10850c31833e56c9a353218f8d631e5762339ac9dac4423f742ab2ad7128
 ```

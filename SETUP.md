@@ -1,6 +1,7 @@
 # Getting Started - Dainik Rojgar
 
 ## Prerequisites
+
 - Node.js (v16 or higher)
 - npm or yarn
 - MongoDB (local or Atlas)
@@ -11,11 +12,13 @@
 ### 1. Install Dependencies
 
 From the root directory:
+
 ```bash
 npm run install-all
 ```
 
 Or manually:
+
 ```bash
 # Install root dependencies
 npm install
@@ -37,6 +40,7 @@ cp .env.example .env
 ```
 
 Then edit `.env` with your configuration:
+
 ```
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/dainik-rojgar
@@ -46,6 +50,7 @@ JWT_SECRET=your-secret-key
 ### 3. Start Development Servers
 
 #### Option A: Run both concurrently
+
 ```bash
 npm run dev
 ```
@@ -53,11 +58,13 @@ npm run dev
 #### Option B: Run separately
 
 **Backend:**
+
 ```bash
 npm run backend
 ```
 
 **Frontend:**
+
 ```bash
 npm run frontend
 ```
@@ -103,16 +110,19 @@ Dainik Rojgar/
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/signup` - Create new user
 - `POST /api/auth/login` - Login user
 
 ### Jobs
+
 - `GET /api/jobs` - Get all jobs (with filters)
 - `GET /api/jobs/:id` - Get job details
 - `POST /api/jobs` - Post new job (authenticated)
 - `POST /api/jobs/:id/apply` - Apply for job (authenticated)
 
 ### Users
+
 - `GET /api/users/profile` - Get user profile (authenticated)
 - `PUT /api/users/profile` - Update profile (authenticated)
 
@@ -135,6 +145,7 @@ Dainik Rojgar/
 ## Troubleshooting
 
 **Port already in use:**
+
 ```bash
 # Backend
 lsof -i :5000
@@ -145,6 +156,7 @@ npx expo-cli start -c
 ```
 
 **MongoDB connection error:**
+
 - Verify MongoDB is running
 - Check connection string in `.env`
 

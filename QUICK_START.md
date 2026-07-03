@@ -10,6 +10,7 @@
 ### 1️⃣ Firebase (15 min) - BROWSER TAB OPEN
 
 **What you'll do:**
+
 - Create Google account project
 - Enable phone authentication
 - Download service account JSON
@@ -24,6 +25,7 @@
 ### 2️⃣ MongoDB Atlas (15 min) - BROWSER TAB OPEN
 
 **What you'll do:**
+
 - Create free M0 cluster
 - Create database user (save password!)
 - Allow network access (0.0.0.0/0)
@@ -38,6 +40,7 @@
 ### 3️⃣ Railway (20 min) - BROWSER TAB OPEN
 
 **What you'll do:**
+
 - Connect GitHub repo
 - Create new project
 - Add 18 environment variables
@@ -75,12 +78,14 @@ curl -X POST https://your-railway-url.up.railway.app/api/auth/send-otp \
 
 ## 🎯 Your Mission
 
-### Before Starting:
+### Before Starting
+
 - [ ] Have Google account ready
 - [ ] Have GitHub account ready
 - [ ] Code is committed locally
 
-### After Setup:
+### After Setup
+
 - [ ] Firebase credentials saved
 - [ ] MongoDB connection string saved
 - [ ] Railway URL saved
@@ -92,23 +97,27 @@ curl -X POST https://your-railway-url.up.railway.app/api/auth/send-otp \
 ## 🆘 Quick Commands
 
 **Generate JWT Secret:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 **Test Local Backend:**
+
 ```bash
 cd backend
 npm start
 ```
 
 **Build Backend:**
+
 ```bash
 cd backend
 npm run build
 ```
 
 **Push to GitHub:**
+
 ```bash
 git add .
 git commit -m "Production ready"
@@ -129,6 +138,7 @@ git push origin main
 ## 🎓 First Time Deployment?
 
 Follow this order:
+
 1. Open `PRODUCTION_SETUP_GUIDE.md`
 2. Follow Step 1 (Firebase) - 15 min
 3. Follow Step 2 (MongoDB) - 15 min
@@ -144,6 +154,7 @@ Follow this order:
 ## 🔧 Already Have Accounts?
 
 If you already have Firebase/MongoDB/Railway accounts:
+
 - **Time saved:** ~20 minutes
 - **Skip to:** Creating projects directly
 - **Focus on:** Adding credentials correctly
@@ -153,6 +164,7 @@ If you already have Firebase/MongoDB/Railway accounts:
 **Ready? Open PRODUCTION_SETUP_GUIDE.md and let's deploy! 🚀**
 
 Browser tabs are already open for:
+
 - ✅ Firebase Console
 - ✅ MongoDB Atlas
 - ✅ Railway

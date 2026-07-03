@@ -7,6 +7,7 @@ Dainik Rojgar is a mobile-first marketplace connecting daily wage workers with l
 ## Technology Stack
 
 ### Frontend
+
 - **Framework**: React Native (Expo)
 - **Navigation**: React Navigation
 - **State Management**: Zustand
@@ -14,6 +15,7 @@ Dainik Rojgar is a mobile-first marketplace connecting daily wage workers with l
 - **Location Services**: Expo Location
 
 ### Backend
+
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Database**: MongoDB
@@ -21,6 +23,7 @@ Dainik Rojgar is a mobile-first marketplace connecting daily wage workers with l
 - **Language**: TypeScript
 
 ### Database
+
 - **Primary**: MongoDB
 - **Optional**: PostgreSQL (future)
 
@@ -78,6 +81,7 @@ Dainik Rojgar is a mobile-first marketplace connecting daily wage workers with l
 ## Data Models
 
 ### User Model
+
 ```typescript
 interface User {
   _id: ObjectId
@@ -102,6 +106,7 @@ interface User {
 ```
 
 ### Job Model
+
 ```typescript
 interface Job {
   _id: ObjectId
@@ -134,11 +139,13 @@ interface Job {
 ### RESTful Endpoints
 
 #### Authentication
+
 - `POST /api/auth/signup` - Register new user
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/logout` - Logout user
 
 #### Jobs
+
 - `GET /api/jobs?city=&category=&page=&limit=` - List jobs with filters
 - `GET /api/jobs/:id` - Get job details
 - `POST /api/jobs` - Create job (employer only)
@@ -147,6 +154,7 @@ interface Job {
 - `DELETE /api/jobs/:id` - Delete job (owner only)
 
 #### Users
+
 - `GET /api/users/profile` - Get current user profile
 - `PUT /api/users/profile` - Update profile
 - `GET /api/users/:id` - Get user public profile
@@ -253,7 +261,7 @@ backend/
 
 ## Scalability Features
 
-1. **Database Indexing**: 
+1. **Database Indexing**:
    - email field indexed for quick lookup
    - location fields for geo-queries
 
@@ -272,10 +280,12 @@ backend/
 ## Deployment
 
 ### Frontend
+
 - Expo EAS Build for iOS/Android builds
 - Expo Updates for OTA updates
 
 ### Backend
+
 - Docker containerization
 - PM2 process management
 - Cloud deployment (AWS, Heroku, DigitalOcean)

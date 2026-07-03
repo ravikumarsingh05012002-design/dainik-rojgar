@@ -5,6 +5,7 @@ Complete step-by-step guide to set up MongoDB Atlas cloud database for productio
 ---
 
 ## Prerequisites
+
 - MongoDB Atlas account (free tier available)
 - Email address for account creation
 
@@ -23,7 +24,7 @@ Complete step-by-step guide to set up MongoDB Atlas cloud database for productio
 
 ## Step 2: Create a New Cluster
 
-### For Free Tier (M0 - Recommended for MVP):
+### For Free Tier (M0 - Recommended for MVP)
 
 1. After login, click **"Build a Database"**
 2. Select **"M0 FREE"** cluster tier
@@ -47,7 +48,7 @@ Complete step-by-step guide to set up MongoDB Atlas cloud database for productio
    - **Authentication Method**: Password
    - **Username**: `dainikrojgar_admin`
    - **Password**: Click "Autogenerate Secure Password" (save this!)
-   - **Database User Privileges**: 
+   - **Database User Privileges**:
      - Select **"Read and write to any database"**
 4. Click **"Add User"**
 
@@ -57,7 +58,8 @@ Complete step-by-step guide to set up MongoDB Atlas cloud database for productio
 
 ## Step 4: Configure Network Access
 
-### For Development (Allow All IPs):
+### For Development (Allow All IPs)
+
 1. Go to **Network Access** (left sidebar → Security)
 2. Click **"Add IP Address"**
 3. Click **"Allow Access from Anywhere"**
@@ -65,8 +67,10 @@ Complete step-by-step guide to set up MongoDB Atlas cloud database for productio
 5. Comment: `Allow all (for Railway/development)`
 6. Click **"Confirm"**
 
-### For Production (Recommended):
+### For Production (Recommended)
+
 Add specific IPs:
+
 - Railway IPs (Railway provides dynamic IPs, so use 0.0.0.0/0)
 - Your office/home IP for testing
 
@@ -80,6 +84,7 @@ Add specific IPs:
 4. Driver: **Node.js**
 5. Version: **5.5 or later**
 6. Copy the connection string:
+
    ```
    mongodb+srv://dainikrojgar_admin:<password>@dainik-rojgar-cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
    ```
@@ -90,17 +95,20 @@ Add specific IPs:
 
 Replace placeholders in the connection string:
 
-### Original:
+### Original
+
 ```
 mongodb+srv://dainikrojgar_admin:<password>@dainik-rojgar-cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
 ```
 
-### Updated:
+### Updated
+
 ```
 mongodb+srv://dainikrojgar_admin:YOUR_ACTUAL_PASSWORD@dainik-rojgar-cluster.xxxxx.mongodb.net/dainik-rojgar?retryWrites=true&w=majority
 ```
 
 **Changes made:**
+
 1. Replace `<password>` with your actual password
 2. Add database name `/dainik-rojgar` before `?`
 3. Keep `retryWrites=true&w=majority`
@@ -110,11 +118,14 @@ mongodb+srv://dainikrojgar_admin:YOUR_ACTUAL_PASSWORD@dainik-rojgar-cluster.xxxx
 ## Step 7: Create Database and Collections
 
 ### Option A: Automatic (Recommended)
+
 Your application will automatically create:
+
 - Database: `dainik-rojgar`
 - Collections: `users`, `jobs`, `bookings`
 
 ### Option B: Manual Setup
+
 1. Go to **Database** → **Browse Collections**
 2. Click **"Create Database"**
 3. Database name: `dainik-rojgar`
@@ -128,7 +139,8 @@ Your application will automatically create:
 
 In MongoDB Atlas → Browse Collections → Select collection → Indexes:
 
-### Users Collection Indexes:
+### Users Collection Indexes
+
 ```javascript
 // 1. Phone number (unique)
 { "phone": 1 }, { unique: true }
@@ -143,7 +155,8 @@ In MongoDB Atlas → Browse Collections → Select collection → Indexes:
 { "workerCategory": 1, "is_online": 1, "is_available": 1 }
 ```
 
-### Jobs Collection Indexes:
+### Jobs Collection Indexes
+
 ```javascript
 // 1. Location-based search
 { "location": "2dsphere" }
@@ -155,7 +168,8 @@ In MongoDB Atlas → Browse Collections → Select collection → Indexes:
 { "employerId": 1, "status": 1 }
 ```
 
-### Bookings Collection Indexes:
+### Bookings Collection Indexes
+
 ```javascript
 // 1. Worker ID lookup
 { "workerId": 1, "status": 1 }
@@ -171,25 +185,29 @@ In MongoDB Atlas → Browse Collections → Select collection → Indexes:
 
 ## Step 9: Test Connection
 
-### From Local Development:
+### From Local Development
 
 1. Update `backend/.env`:
+
    ```env
    MONGODB_URI=mongodb+srv://dainikrojgar_admin:YOUR_PASSWORD@dainik-rojgar-cluster.xxxxx.mongodb.net/dainik-rojgar?retryWrites=true&w=majority
    ```
 
 2. Start backend:
+
    ```bash
    cd backend
    npm start
    ```
 
 3. Check logs for:
+
    ```
    ✓ MongoDB connected successfully
    ```
 
-### Test Query:
+### Test Query
+
 ```bash
 curl http://localhost:5000/api/health
 ```
@@ -211,10 +229,12 @@ MONGODB_URI=mongodb+srv://dainikrojgar_admin:YOUR_PASSWORD@dainik-rojgar-cluster
 ## Data Backup & Recovery
 
 ### Automatic Backups (Paid Tiers Only)
+
 - M10+ clusters include automated backups
 - Point-in-time recovery available
 
-### Manual Export (Free Tier):
+### Manual Export (Free Tier)
+
 ```bash
 # Using MongoDB Compass (GUI)
 1. Download MongoDB Compass
@@ -229,7 +249,8 @@ mongodump --uri="mongodb+srv://..." --out=./backup
 
 ## Monitoring & Alerts
 
-### Set Up Alerts:
+### Set Up Alerts
+
 1. Go to **Alerts** (left sidebar)
 2. Click **"Create Alert"**
 3. Configure alerts for:
@@ -238,7 +259,8 @@ mongodump --uri="mongodb+srv://..." --out=./backup
    - Low disk space
    - Query performance issues
 
-### Monitor Performance:
+### Monitor Performance
+
 1. Go to **Metrics** (left sidebar → Deployment)
 2. View:
    - Operations per second
@@ -251,6 +273,7 @@ mongodump --uri="mongodb+srv://..." --out=./backup
 ## Free Tier Limitations
 
 **M0 (Free) Cluster:**
+
 - ✅ 512 MB storage
 - ✅ Shared CPU
 - ✅ Shared RAM
@@ -259,12 +282,14 @@ mongodump --uri="mongodb+srv://..." --out=./backup
 - ⚠️ No auto-scaling
 
 **When to Upgrade:**
+
 - Storage > 400 MB
 - Consistent high traffic
 - Need guaranteed performance
 - Production critical application
 
 **Upgrade Path:**
+
 - **M10** ($0.08/hour = ~$60/month): 10GB storage, dedicated CPU
 - **M20** ($0.20/hour = ~$150/month): 20GB storage, better performance
 
@@ -284,23 +309,29 @@ mongodump --uri="mongodb+srv://..." --out=./backup
 ## Troubleshooting
 
 ### Connection Failed
+
 **Error**: `MongoNetworkError: failed to connect`
+
 - ✅ Check Network Access whitelist includes your IP
 - ✅ Verify password has no special characters (URL encode if needed)
 - ✅ Ensure connection string has database name
 
 ### Authentication Failed
+
 **Error**: `MongoServerError: Authentication failed`
+
 - ✅ Verify username is correct
 - ✅ Check password (no extra spaces)
 - ✅ Ensure user has database access permissions
 
 ### Slow Queries
+
 - ✅ Create indexes for frequently queried fields
 - ✅ Use MongoDB Atlas Performance Advisor
 - ✅ Review query patterns in Metrics
 
 ### Out of Storage (Free Tier)
+
 - ✅ Delete old test data
 - ✅ Optimize document structure
 - ✅ Consider upgrading to M10
@@ -346,26 +377,29 @@ mongorestore --uri="mongodb+srv://username:password@cluster.mongodb.net/dainik-r
 
 ## Support Resources
 
-- **MongoDB University**: Free courses - https://university.mongodb.com
-- **Documentation**: https://docs.atlas.mongodb.com
-- **Community Forums**: https://community.mongodb.com
+- **MongoDB University**: Free courses - <https://university.mongodb.com>
+- **Documentation**: <https://docs.atlas.mongodb.com>
+- **Community Forums**: <https://community.mongodb.com>
 - **Support Tickets**: Available for paid tiers
 
 ---
 
 ## Connection String Examples
 
-### Development (Local):
+### Development (Local)
+
 ```env
 MONGODB_URI=mongodb://localhost:27017/dainik-rojgar
 ```
 
-### Production (Atlas):
+### Production (Atlas)
+
 ```env
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dainik-rojgar?retryWrites=true&w=majority
 ```
 
-### With Special Characters in Password:
+### With Special Characters in Password
+
 ```env
 # If password is: P@ss#w0rd!
 # URL encode: P%40ss%23w0rd%21

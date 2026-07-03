@@ -5,6 +5,7 @@ A mobile application connecting daily wage workers with local employers for job 
 ## Project Overview
 
 Dainik Rojgar is a two-sided marketplace that:
+
 - **For Workers**: Provides access to daily job opportunities based on location
 - **For Employers**: Allows posting job listings and hiring workers
 
@@ -37,6 +38,7 @@ Dainik Rojgar/
 ## Quick Start
 
 ### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -44,6 +46,7 @@ npx expo start
 ```
 
 ### Backend Setup
+
 ```bash
 cd backend
 npm install
@@ -63,8 +66,8 @@ npm run dev
 
 ## Development
 
-- Frontend runs on Expo (http://localhost:19000)
-- Backend runs on http://localhost:5000
+- Frontend runs on Expo (<http://localhost:19000>)
+- Backend runs on <http://localhost:5000>
 
 ## Environment Setup
 
