@@ -4,6 +4,9 @@
   "type": "module",
   "description": "Node.js backend API for Dainik Rojgar",
   "main": "src/server.ts",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --esm src/server.ts",
     "build": "tsc",
