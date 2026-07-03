@@ -9,6 +9,7 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, radius, shadow, spacing, typography } from '../theme';
@@ -39,6 +40,23 @@ export default function PostJobScreen() {
   const [wageRate, setWageRate] = useState('');
   const [duration, setDuration] = useState('1');
   const [workersNeeded, setWorkersNeeded] = useState('1');
+  const fadeIn = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(16)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 360,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 360,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeIn, translateY]);
 
   const handleSubmit = async () => {
     // Validation
@@ -117,10 +135,13 @@ export default function PostJobScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        style={styles.scroll}
+      <Animated.ScrollView
+        style={[styles.scroll, { opacity: fadeIn, transform: [{ translateY }] }]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+        scrollEventThrottle={16}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -128,6 +149,21 @@ export default function PostJobScreen() {
           <Text style={styles.headerSubtitle}>
             Find skilled workers for your project
           </Text>
+          <View style={styles.progressRow}>
+            <View style={[styles.progressStep, styles.progressStepActive]} />
+            <View style={[styles.progressConnector, title ? styles.progressConnectorActive : null]} />
+            <View style={[styles.progressStep, category ? styles.progressStepActive : null]} />
+            <View style={[styles.progressConnector, description ? styles.progressConnectorActive : null]} />
+            <View style={[styles.progressStep, location && wageRate ? styles.progressStepActive : null]} />
+          </View>
+        </View>
+
+        <View style={styles.previewCard}>
+          <Text style={styles.previewTitle}>Quick Cost Preview</Text>
+          <Text style={styles.previewValue}>
+            ₹{(parseFloat(wageRate || '0') * parseInt(duration || '1', 10) * parseInt(workersNeeded || '1', 10)).toFixed(0)}
+          </Text>
+          <Text style={styles.previewHint}>Estimated total payout for this requirement</Text>
         </View>
 
         {/* Form */}
@@ -261,7 +297,7 @@ export default function PostJobScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -294,6 +330,57 @@ const styles = StyleSheet.create({
     fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.regular,
     color: colors.textSecondary,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  progressStep: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.border,
+  },
+  progressStepActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  progressConnector: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.xs,
+  },
+  progressConnectorActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  previewCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    backgroundColor: colors.textPrimary,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: '#1F2937',
+    padding: spacing.lg,
+  },
+  previewTitle: {
+    fontSize: typography.size.sm,
+    fontFamily: typography.fontFamily.semiBold,
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  previewValue: {
+    fontSize: typography.size.xxl,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textInverse,
+    marginTop: spacing.xs,
+  },
+  previewHint: {
+    marginTop: spacing.xs,
+    fontSize: typography.size.xs,
+    fontFamily: typography.fontFamily.medium,
+    color: '#D1D5DB',
   },
   form: {
     paddingHorizontal: spacing.lg,

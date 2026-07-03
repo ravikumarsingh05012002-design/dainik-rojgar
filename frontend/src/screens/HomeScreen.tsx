@@ -10,6 +10,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import GeoPill from '../components/GeoPill';
@@ -59,6 +60,23 @@ export default function HomeScreen() {
   const [error, setError] = useState('');
   const [location, setLocation] = useState<Coordinates>({ latitude: 26.8, longitude: 75.8 }); // Default: Jaipur
   const [locationName, setLocationName] = useState('Jaipur, Rajasthan');
+  const fadeIn = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeIn, translateY]);
 
   // Get user's real location on mount
   useEffect(() => {
@@ -166,6 +184,7 @@ export default function HomeScreen() {
       ) : null}
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View style={{ opacity: fadeIn, transform: [{ translateY }] }}>
         <Card style={styles.heroCard} floating>
           <View style={styles.heroTopRow}>
             <View>
@@ -197,6 +216,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </Card>
+        </Animated.View>
 
         {/* Search bar */}
         <View style={styles.searchRow}>
@@ -261,7 +281,8 @@ export default function HomeScreen() {
             <PrimaryButton label="Refresh" onPress={fetchWorkers} style={styles.refreshButton} />
           </View>
         ) : (
-          <FlatList
+          <Animated.FlatList
+            style={{ opacity: fadeIn, transform: [{ translateY }] }}
             data={filteredWorkers}
             keyExtractor={(item: any) => item.id}
             scrollEnabled={false}

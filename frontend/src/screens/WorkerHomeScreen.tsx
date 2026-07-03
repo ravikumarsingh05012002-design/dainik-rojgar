@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, ActivityIndicator, Alert } from 'react-native';
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import GoOnlineToggle from '../components/GoOnlineToggle';
 import StatCard from '../components/StatCard';
@@ -22,6 +31,23 @@ export default function WorkerHomeScreen() {
   const [earnings, setEarnings] = useState({ today: 0, hours: 0, completed: 0, rating: 4.5 });
   const [pollingInterval, setPollingInterval] = useState<any>(null);
   const [workerName, setWorkerName] = useState('Worker');
+  const fadeIn = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(16)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 380,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 380,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeIn, translateY]);
 
   // Fetch pending bookings (job alerts)
   const fetchPendingBookings = async () => {
@@ -124,11 +150,26 @@ export default function WorkerHomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.greeting}>Namaste, {workerName} 👋</Text>
-        <Text style={styles.subGreeting}>
-          {isOnline ? "You're online — jobs will start pinging in." : 'Go online to start receiving job alerts.'}
-        </Text>
+      <Animated.ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={{ opacity: fadeIn, transform: [{ translateY }] }}
+      >
+        <Card style={styles.heroCard} floating>
+          <Text style={styles.heroEyebrow}>Worker Control Center</Text>
+          <Text style={styles.heroGreeting}>Namaste, {workerName} 👋</Text>
+          <Text style={styles.heroSubGreeting}>
+            {isOnline
+              ? 'You are live in marketplace. Keep response time fast to win more jobs.'
+              : 'Go online to appear in nearby search and start getting instant requests.'}
+          </Text>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusPill, isOnline ? styles.statusPillOnline : styles.statusPillOffline]}>
+              <Text style={styles.statusPillText}>{isOnline ? 'Online' : 'Offline'}</Text>
+            </View>
+            <Text style={styles.statusHint}>{incomingJob ? '1 request waiting' : 'No pending request'}</Text>
+          </View>
+        </Card>
 
         <View style={styles.toggleWrap}>
           <GoOnlineToggle isOnline={isOnline} onToggle={handleToggleOnline} disabled={togglingOnline} />
@@ -151,7 +192,23 @@ export default function WorkerHomeScreen() {
             Stay online during peak hours (8–11 AM, 5–8 PM) to receive more job requests.
           </Text>
         </Card>
-      </ScrollView>
+
+        <Card style={styles.insightCard}>
+          <Text style={styles.insightTitle}>Boost your visibility</Text>
+          <View style={styles.insightBulletRow}>
+            <Text style={styles.insightBullet}>•</Text>
+            <Text style={styles.insightText}>Keep profile details complete for higher trust.</Text>
+          </View>
+          <View style={styles.insightBulletRow}>
+            <Text style={styles.insightBullet}>•</Text>
+            <Text style={styles.insightText}>Respond in under 2 minutes to improve acceptance rank.</Text>
+          </View>
+          <View style={styles.insightBulletRow}>
+            <Text style={styles.insightBullet}>•</Text>
+            <Text style={styles.insightText}>Stay online near demand hotspots for more bookings.</Text>
+          </View>
+        </Card>
+      </Animated.ScrollView>
 
       {incomingJob && (
         <JobAlertSheet
@@ -184,12 +241,67 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.textPrimary,
   },
+  heroCard: {
+    marginBottom: spacing.lg,
+    backgroundColor: colors.textPrimary,
+    borderColor: '#1F2937',
+  },
+  heroEyebrow: {
+    fontSize: typography.size.xs,
+    fontFamily: typography.fontFamily.semiBold,
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs,
+  },
+  heroGreeting: {
+    fontSize: typography.size.xxl,
+    fontFamily: typography.fontFamily.bold,
+    fontWeight: '800',
+    color: colors.textInverse,
+  },
+  heroSubGreeting: {
+    fontSize: typography.size.sm,
+    fontFamily: typography.fontFamily.medium,
+    color: '#D1D5DB',
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
   subGreeting: {
     fontSize: typography.size.sm,
     fontFamily: typography.fontFamily.medium,
     color: colors.textSecondary,
     marginTop: spacing.xs,
     marginBottom: spacing.xl,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  statusPillOnline: {
+    backgroundColor: '#DCFCE7',
+  },
+  statusPillOffline: {
+    backgroundColor: '#F3F4F6',
+  },
+  statusPillText: {
+    fontSize: typography.size.xs,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statusHint: {
+    fontSize: typography.size.xs,
+    color: '#D1D5DB',
+    fontFamily: typography.fontFamily.medium,
   },
   toggleWrap: {
     alignItems: 'center',
@@ -226,5 +338,32 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium,
     color: colors.textPrimary,
     lineHeight: typography.lineHeight.sm,
+  },
+  insightCard: {
+    marginTop: spacing.md,
+  },
+  insightTitle: {
+    fontSize: typography.size.base,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  insightBulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.xs,
+  },
+  insightBullet: {
+    marginRight: spacing.xs,
+    color: colors.accent,
+    fontSize: typography.size.base,
+    lineHeight: typography.lineHeight.base,
+  },
+  insightText: {
+    flex: 1,
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
+    color: colors.textSecondary,
+    fontFamily: typography.fontFamily.medium,
   },
 });

@@ -9,6 +9,7 @@ import {
   Pressable,
   Alert,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, radius, shadow, spacing, typography } from '../theme';
@@ -55,6 +56,23 @@ export default function BookingsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const fadeIn = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(14)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 320,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 320,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeIn, translateY]);
 
   // Fetch bookings on screen focus
   useFocusEffect(
@@ -104,6 +122,8 @@ export default function BookingsScreen() {
       return ['completed', 'cancelled'].includes(booking.status);
     }
   });
+  const activeCount = bookings.filter((b) => ['pending', 'accepted', 'en_route', 'ongoing'].includes(b.status)).length;
+  const completedCount = bookings.filter((b) => b.status === 'completed').length;
 
   const renderBookingCard = ({ item }: { item: Booking }) => {
     const isEmployer = currentRole === 'employer';
@@ -207,6 +227,23 @@ export default function BookingsScreen() {
         </Text>
       </View>
 
+      <Animated.View style={{ opacity: fadeIn, transform: [{ translateY }] }}>
+        <View style={styles.statsStrip}>
+          <View style={styles.statsCard}>
+            <Text style={styles.statsValue}>{activeCount}</Text>
+            <Text style={styles.statsLabel}>Active</Text>
+          </View>
+          <View style={styles.statsCard}>
+            <Text style={styles.statsValue}>{completedCount}</Text>
+            <Text style={styles.statsLabel}>Completed</Text>
+          </View>
+          <View style={styles.statsCard}>
+            <Text style={styles.statsValue}>{bookings.length}</Text>
+            <Text style={styles.statsLabel}>Total</Text>
+          </View>
+        </View>
+      </Animated.View>
+
       {/* Tab Switcher */}
       <View style={styles.tabContainer}>
         <Pressable
@@ -250,7 +287,8 @@ export default function BookingsScreen() {
           <Text style={styles.loadingText}>Loading bookings...</Text>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
+          style={{ opacity: fadeIn, transform: [{ translateY }] }}
           data={filteredBookings}
           renderItem={renderBookingCard}
           keyExtractor={(item) => item._id}
@@ -298,6 +336,33 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     gap: spacing.sm,
   },
+  statsStrip: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.card,
+  },
+  statsCard: {
+    flex: 1,
+    backgroundColor: colors.backgroundElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  statsValue: {
+    fontSize: typography.size.lg,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+  },
+  statsLabel: {
+    fontSize: typography.size.xs,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.textSecondary,
+  },
   tab: {
     flex: 1,
     paddingVertical: spacing.sm,
@@ -336,6 +401,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadow.card,
   },
   cardHeader: {

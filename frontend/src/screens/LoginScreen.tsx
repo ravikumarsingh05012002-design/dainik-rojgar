@@ -34,9 +34,26 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const pageFade = useRef(new Animated.Value(0)).current;
+  const pageSlide = useRef(new Animated.Value(16)).current;
 
   const phoneLabelAnim = useRef(new Animated.Value(0)).current;
   const otpLabelAnim = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(pageFade, {
+        toValue: 1,
+        duration: 360,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pageSlide, {
+        toValue: 0,
+        duration: 360,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [pageFade, pageSlide]);
 
   const animateLabel = (anim: Animated.Value, focused: boolean, hasValue: boolean) => {
     Animated.timing(anim, {
@@ -130,7 +147,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <Animated.ScrollView
+        style={{ opacity: pageFade, transform: [{ translateY: pageSlide }] }}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.backdropBlobTop} />
         <View style={styles.backdropBlobBottom} />
 
@@ -222,7 +243,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         <Text style={styles.footerNote} onPress={() => navigation.navigate?.('Signup')}>
           New here? Create an account
         </Text>
-      </ScrollView>
+      </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
 }

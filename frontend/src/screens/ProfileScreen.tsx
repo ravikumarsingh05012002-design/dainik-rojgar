@@ -8,6 +8,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import PrimaryButton from '../components/PrimaryButton';
@@ -23,9 +24,23 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [switchingRole, setSwitchingRole] = useState(false);
+  const fadeIn = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(14)).current;
 
   useEffect(() => {
     loadUserProfile();
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 340,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 340,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const loadUserProfile = async () => {
@@ -86,7 +101,11 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <Animated.ScrollView
+        style={[styles.scroll, { opacity: fadeIn, transform: [{ translateY }] }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.avatar}>
@@ -96,6 +115,9 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{user?.name || 'Guest User'}</Text>
           <Text style={styles.phone}>{user?.phone || '+91 XXXXXXXXXX'}</Text>
+          <View style={styles.profileBadge}>
+            <Text style={styles.profileBadgeText}>{currentRole === 'employer' ? 'Employer Mode' : 'Worker Mode'}</Text>
+          </View>
         </View>
 
         {/* Role Switcher */}
@@ -184,7 +206,7 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <Text style={styles.appInfo}>Dainik Rojgar v1.0.0</Text>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -209,6 +231,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl * 2,
     backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   avatar: {
     width: 80,
@@ -236,12 +260,28 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     color: colors.textSecondary,
   },
+  profileBadge: {
+    marginTop: spacing.md,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  profileBadgeText: {
+    fontSize: typography.size.xs,
+    color: colors.textPrimary,
+    fontFamily: typography.fontFamily.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   card: {
     backgroundColor: colors.card,
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
     padding: spacing.lg,
     borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadow.card,
   },
   cardTitle: {
