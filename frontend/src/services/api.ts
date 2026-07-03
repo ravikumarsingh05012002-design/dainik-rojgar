@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 
 const DEVELOPMENT_API_URL = 'http://localhost:5000/api';
-const PRODUCTION_API_URL = 'https://your-railway-app.up.railway.app/api'; // UPDATE THIS after Railway deployment
+const PRODUCTION_API_URL = 'https://dainik-rojgar-production.up.railway.app/api';
 
 // Detect environment - React Native's __DEV__ is available globally
 declare const __DEV__: boolean;
