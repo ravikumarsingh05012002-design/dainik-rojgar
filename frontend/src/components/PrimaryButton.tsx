@@ -72,7 +72,7 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.card,
+    borderRadius: radius.button,
     paddingVertical: spacing.md + 2,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
@@ -83,6 +83,13 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: colors.primary,
+    borderWidth: 1,
+    borderColor: colors.primaryDark,
+    shadowColor: '#111827',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
   outline: {
     backgroundColor: 'transparent',
@@ -93,7 +100,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.5,

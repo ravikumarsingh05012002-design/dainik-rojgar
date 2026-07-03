@@ -124,13 +124,26 @@ export default function HomeScreen() {
   };
 
   const filteredWorkers = useMemo(() => {
-    return workers.filter((w: any) => {
+    const next = workers.filter((w: any) => {
       if (activeChips.includes('available_today') && !w.available) return false;
       if (activeChips.includes('top_rated') && w.rating < 4.5) return false;
-      if (searchText && !w.profession.toLowerCase().includes(searchText.toLowerCase())) return false;
+      if (
+        searchText &&
+        !(`${w.profession} ${w.name}`.toLowerCase().includes(searchText.toLowerCase()))
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [activeCategory, activeChips, searchText, workers]);
+
+    if (activeChips.includes('near_me')) {
+      return next.sort((a: any, b: any) => a.distance - b.distance);
+    }
+
+    return next;
+  }, [activeChips, searchText, workers]);
+
+  const onlineCount = filteredWorkers.filter((w: any) => w.available).length;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -153,6 +166,38 @@ export default function HomeScreen() {
       ) : null}
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Card style={styles.heroCard} floating>
+          <View style={styles.heroTopRow}>
+            <View>
+              <Text style={styles.heroEyebrow}>Live Marketplace</Text>
+              <Text style={styles.heroTitle}>Hire trusted workers in minutes</Text>
+            </View>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeLabel}>{onlineCount} online</Text>
+            </View>
+          </View>
+          <Text style={styles.heroSubtitle}>
+            Real-time matching based on your location, category, rating and availability.
+          </Text>
+          <View style={styles.quickActionsRow}>
+            <Pressable style={styles.quickAction} onPress={() => fetchWorkers()}>
+              <Text style={styles.quickActionIcon}>⟳</Text>
+              <Text style={styles.quickActionLabel}>Refresh</Text>
+            </Pressable>
+            <Pressable
+              style={styles.quickAction}
+              onPress={() => navigation.navigate?.('PostJob')}
+            >
+              <Text style={styles.quickActionIcon}>✍️</Text>
+              <Text style={styles.quickActionLabel}>Post Job</Text>
+            </Pressable>
+            <Pressable style={styles.quickAction} onPress={() => setActiveChips([])}>
+              <Text style={styles.quickActionIcon}>⌫</Text>
+              <Text style={styles.quickActionLabel}>Clear Filters</Text>
+            </Pressable>
+          </View>
+        </Card>
+
         {/* Search bar */}
         <View style={styles.searchRow}>
           <Text style={styles.searchIcon}>🔍</Text>
@@ -228,7 +273,12 @@ export default function HomeScreen() {
                     <Text style={styles.avatarText}>{initials(item.name)}</Text>
                   </View>
                   <View style={styles.workerInfo}>
-                    <Text style={styles.workerName}>{item.name}</Text>
+                    <View style={styles.workerNameRow}>
+                      <Text style={styles.workerName}>{item.name}</Text>
+                      <View style={[styles.statusPill, item.available ? styles.statusAvailable : styles.statusBusy]}>
+                        <Text style={styles.statusPillText}>{item.available ? 'Available' : 'Busy'}</Text>
+                      </View>
+                    </View>
                     <Text style={styles.workerProfession}>{item.profession}</Text>
                     <Text style={styles.workerMeta}>
                       ⭐ {item.rating} · {item.completedJobs} jobs · {item.distance.toFixed(1)}km away
@@ -341,6 +391,76 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenHorizontal,
     paddingBottom: spacing.xxl,
   },
+  heroCard: {
+    marginBottom: spacing.lg,
+    backgroundColor: colors.textPrimary,
+    borderColor: '#1F2937',
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+  },
+  heroEyebrow: {
+    fontSize: typography.size.xs,
+    color: '#9CA3AF',
+    fontFamily: typography.fontFamily.semiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  heroTitle: {
+    width: '85%',
+    color: colors.textInverse,
+    fontSize: typography.size.xl,
+    fontFamily: typography.fontFamily.bold,
+    fontWeight: '800',
+    lineHeight: typography.lineHeight.xl,
+  },
+  heroSubtitle: {
+    color: '#D1D5DB',
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
+    marginBottom: spacing.base,
+    fontFamily: typography.fontFamily.medium,
+  },
+  heroBadge: {
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  heroBadgeLabel: {
+    fontSize: typography.size.xs,
+    color: colors.textOnPrimary,
+    fontFamily: typography.fontFamily.bold,
+    fontWeight: '800',
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quickAction: {
+    flex: 1,
+    borderRadius: radius.button,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: '#1F2937',
+    borderWidth: 1,
+    borderColor: '#374151',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionIcon: {
+    fontSize: typography.size.base,
+    marginBottom: 2,
+  },
+  quickActionLabel: {
+    color: '#E5E7EB',
+    fontSize: typography.size.xs,
+    fontFamily: typography.fontFamily.semiBold,
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -350,6 +470,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.md,
     height: 52,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   searchIcon: {
     fontSize: typography.size.base,
@@ -427,6 +549,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
   },
+  workerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+    gap: spacing.sm,
+  },
   avatar: {
     width: 52,
     height: 52,
@@ -449,6 +577,24 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     fontWeight: '700',
     color: colors.textPrimary,
+  },
+  statusPill: {
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  statusAvailable: {
+    backgroundColor: '#DCFCE7',
+  },
+  statusBusy: {
+    backgroundColor: '#F3F4F6',
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   workerProfession: {
     fontSize: typography.size.sm,

@@ -50,16 +50,26 @@ function MainTabs() {
         headerShown: true,
         tabBarActiveTintColor: colors.primaryDark,
         tabBarInactiveTintColor: colors.textMuted,
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTitleStyle: {
+          fontWeight: '800',
+          color: colors.textPrimary,
+          letterSpacing: 0.2,
+        },
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: 66,
+          borderTopWidth: 1,
+          height: 72,
           paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 10,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '700',
+          letterSpacing: 0.2,
         },
       }}
     >

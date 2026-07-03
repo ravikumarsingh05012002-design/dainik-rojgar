@@ -25,11 +25,15 @@ export const colors = {
   primary: '#FFC107',
   primaryDark: '#E6AC00', // pressed/active state
   primarySoft: '#FFF3D6', // subtle yellow tint for highlights/backgrounds
+  accent: '#FF8A00',
+  accentSoft: '#FFE7CC',
 
   // Neutral surfaces
   background: '#F9FAFB', // soft light grey — app background
+  backgroundElevated: '#F3F4F6',
   card: '#FFFFFF', // pure white — card surfaces
   border: '#E5E7EB',
+  borderStrong: '#D1D5DB',
 
   // Text
   textPrimary: '#111827', // dark charcoal
@@ -49,6 +53,7 @@ export const colors = {
   glassFill: 'rgba(255, 255, 255, 0.55)',
   glassBorder: 'rgba(255, 255, 255, 0.35)',
   scrim: 'rgba(17, 24, 39, 0.45)',
+  spotlight: 'rgba(255, 193, 7, 0.16)',
 
   // Milestone progress
   milestoneComplete: '#FFC107',
@@ -118,6 +123,13 @@ export const shadow = {
     shadowOpacity: 0.04,
     shadowRadius: 12,
     elevation: 3,
+  },
+  cardHover: {
+    shadowColor: '#111827',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 5,
   },
   floating: {
     shadowColor: '#111827',

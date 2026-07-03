@@ -32,6 +32,8 @@ const styles = StyleSheet.create({
   base: {
     backgroundColor: colors.card,
     borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   padded: {
     padding: spacing.base,

@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Pressable,
 } from 'react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import RoleToggleSwitch, { ToggleRole } from '../components/RoleToggleSwitch';
@@ -130,6 +131,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.backdropBlobTop} />
+        <View style={styles.backdropBlobBottom} />
+
         <View style={styles.logoWrap}>
           <View style={styles.logoCircle}>
             <Text style={styles.logoEmoji}>💼</Text>
@@ -138,63 +142,79 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <Text style={styles.tagline}>Find Work, Find Help — Instantly</Text>
         </View>
 
-        {/* Error message */}
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>⚠️ {error}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.floatingField}>
-          <Animated.Text style={[styles.floatingLabel, floatingLabelStyle(phoneLabelAnim)]}>
-            Mobile Number
-          </Animated.Text>
-          <TextInput
-            style={styles.floatingInput}
-            value={phone}
-            keyboardType="phone-pad"
-            editable={!otpSent && !loading}
-            onFocus={() => animateLabel(phoneLabelAnim, true, phone.length > 0)}
-            onBlur={() => animateLabel(phoneLabelAnim, false, phone.length > 0)}
-            onChangeText={(text) => {
-              setPhone(text);
-              animateLabel(phoneLabelAnim, true, text.length > 0);
-            }}
-            placeholder="10 digit mobile"
-            placeholderTextColor={colors.textMuted}
-          />
+        <View style={styles.stepRow}>
+          <View style={[styles.stepDot, styles.stepDotActive]} />
+          <View style={[styles.stepConnector, otpSent && styles.stepConnectorActive]} />
+          <View style={[styles.stepDot, otpSent && styles.stepDotActive]} />
         </View>
 
-        {otpSent && (
+        <Text style={styles.stepLabel}>{otpSent ? 'Step 2: Verify OTP' : 'Step 1: Mobile Verification'}</Text>
+
+        <View style={styles.authCard}>
+          {/* Error message */}
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>⚠️ {error}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.floatingField}>
-            <Animated.Text style={[styles.floatingLabel, floatingLabelStyle(otpLabelAnim)]}>
-              Enter OTP
+            <Animated.Text style={[styles.floatingLabel, floatingLabelStyle(phoneLabelAnim)]}>
+              Mobile Number
             </Animated.Text>
             <TextInput
               style={styles.floatingInput}
-              value={otp}
-              keyboardType="number-pad"
-              maxLength={6}
-              editable={!loading}
-              onFocus={() => animateLabel(otpLabelAnim, true, otp.length > 0)}
-              onBlur={() => animateLabel(otpLabelAnim, false, otp.length > 0)}
+              value={phone}
+              keyboardType="phone-pad"
+              editable={!otpSent && !loading}
+              onFocus={() => animateLabel(phoneLabelAnim, true, phone.length > 0)}
+              onBlur={() => animateLabel(phoneLabelAnim, false, phone.length > 0)}
               onChangeText={(text) => {
-                setOtp(text);
-                animateLabel(otpLabelAnim, true, text.length > 0);
+                setPhone(text);
+                animateLabel(phoneLabelAnim, true, text.length > 0);
               }}
-              placeholder="6 digit OTP"
+              placeholder="10 digit mobile"
               placeholderTextColor={colors.textMuted}
             />
           </View>
-        )}
 
-        <PrimaryButton
-          label={otpSent ? 'Verify & Continue' : 'Send OTP'}
-          onPress={otpSent ? handleVerifyOtp : handleSendOtp}
-          loading={loading}
-          disabled={loading}
-          style={styles.ctaSpacing}
-        />
+          {otpSent && (
+            <View style={styles.floatingField}>
+              <Animated.Text style={[styles.floatingLabel, floatingLabelStyle(otpLabelAnim)]}>
+                Enter OTP
+              </Animated.Text>
+              <TextInput
+                style={styles.floatingInput}
+                value={otp}
+                keyboardType="number-pad"
+                maxLength={6}
+                editable={!loading}
+                onFocus={() => animateLabel(otpLabelAnim, true, otp.length > 0)}
+                onBlur={() => animateLabel(otpLabelAnim, false, otp.length > 0)}
+                onChangeText={(text) => {
+                  setOtp(text);
+                  animateLabel(otpLabelAnim, true, text.length > 0);
+                }}
+                placeholder="6 digit OTP"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          )}
+
+          <PrimaryButton
+            label={otpSent ? 'Verify & Continue' : 'Send OTP'}
+            onPress={otpSent ? handleVerifyOtp : handleSendOtp}
+            loading={loading}
+            disabled={loading}
+            style={styles.ctaSpacing}
+          />
+
+          {otpSent ? (
+            <Pressable onPress={handleSendOtp} disabled={loading}>
+              <Text style={styles.resendText}>Resend OTP</Text>
+            </Pressable>
+          ) : null}
+        </View>
 
         <Text style={styles.sectionLabel}>Continue as</Text>
         <RoleToggleSwitch value={currentRole} onChange={handleRoleChange} />
@@ -217,9 +237,27 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     justifyContent: 'center',
   },
+  backdropBlobTop: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 120,
+    backgroundColor: colors.spotlight,
+    top: -40,
+    right: -60,
+  },
+  backdropBlobBottom: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: colors.accentSoft,
+    bottom: 40,
+    left: -70,
+  },
   logoWrap: {
     alignItems: 'center',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   logoCircle: {
     width: 72,
@@ -244,6 +282,45 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.border,
+  },
+  stepDotActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  stepConnector: {
+    width: 42,
+    height: 2,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.xs,
+  },
+  stepConnectorActive: {
+    backgroundColor: colors.primaryDark,
+  },
+  stepLabel: {
+    textAlign: 'center',
+    fontSize: typography.size.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+    fontFamily: typography.fontFamily.semiBold,
+  },
+  authCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.base,
+    marginBottom: spacing.xl,
   },
   errorBox: {
     backgroundColor: '#FFE8E8',
@@ -283,7 +360,13 @@ const styles = StyleSheet.create({
   },
   ctaSpacing: {
     marginTop: spacing.sm,
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.md,
+  },
+  resendText: {
+    textAlign: 'center',
+    fontSize: typography.size.sm,
+    color: colors.primaryDark,
+    fontFamily: typography.fontFamily.semiBold,
   },
   sectionLabel: {
     fontSize: typography.size.sm,
