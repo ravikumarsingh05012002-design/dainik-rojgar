@@ -73,9 +73,9 @@ Open the downloaded JSON file in a text editor. Copy these 3 values:
 
 ```json
 {
-  "project_id": "dainik-rojgar",           // ← Copy this
-  "private_key": "-----BEGIN PRIVATE KEY-----\n...",  // ← Copy this (with \n)
-  "client_email": "firebase-adminsdk-...@dainik-rojgar.iam.gserviceaccount.com"  // ← Copy this
+  "project_id": "dainik-rojgar", // ← Copy this
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...", // ← Copy this (with \n)
+  "client_email": "firebase-adminsdk-...@dainik-rojgar.iam.gserviceaccount.com" // ← Copy this
 }
 ```
 
@@ -222,7 +222,7 @@ curl http://localhost:5000/api/health
 **Expected:**
 
 ```json
-{"status":"Server is running","timestamp":"2026-07-03T..."}
+{ "status": "Server is running", "timestamp": "2026-07-03T..." }
 ```
 
 ### 3.3 Test OTP Endpoint
@@ -350,7 +350,7 @@ curl https://your-railway-url.up.railway.app/api/health
 **Expected:**
 
 ```json
-{"status":"Server is running","timestamp":"2026-07-03T..."}
+{ "status": "Server is running", "timestamp": "2026-07-03T..." }
 ```
 
 **✅ Railway Deployment Complete!**
@@ -364,13 +364,14 @@ curl https://your-railway-url.up.railway.app/api/health
 Open `frontend/src/services/api.ts` and replace:
 
 ```typescript
-const PRODUCTION_API_URL = 'https://your-railway-app.up.railway.app/api';
+const PRODUCTION_API_URL = "https://your-railway-app.up.railway.app/api";
 ```
 
 With your actual Railway URL:
 
 ```typescript
-const PRODUCTION_API_URL = 'https://dainik-rojgar-production.up.railway.app/api';
+const PRODUCTION_API_URL =
+  "https://dainik-rojgar-production.up.railway.app/api";
 ```
 
 ### 5.2 Test Production Connection

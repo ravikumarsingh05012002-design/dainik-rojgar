@@ -4,13 +4,13 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 // Import routes
-import authRoutes from './routes/auth';
-import jobRoutes from './routes/jobs';
-import userRoutes from './routes/users';
-import bookingRoutes from './routes/bookings';
+import authRoutes from './routes/auth.js';
+import jobRoutes from './routes/jobs.js';
+import userRoutes from './routes/users.js';
+import bookingRoutes from './routes/bookings.js';
 
 // Import utilities
-import { initializeFirebase } from './utils/firebase';
+import { initializeFirebase } from './utils/firebase.js';
 
 dotenv.config();
 

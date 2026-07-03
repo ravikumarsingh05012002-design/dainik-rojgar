@@ -134,16 +134,19 @@ Firebase Admin SDK alone cannot send SMS. You need:
 If using Twilio for actual SMS:
 
 ```typescript
-import twilio from 'twilio';
+import twilio from "twilio";
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
+  process.env.TWILIO_AUTH_TOKEN,
 );
 
-export async function sendOTP(phoneNumber: string, otp: string): Promise<boolean> {
+export async function sendOTP(
+  phoneNumber: string,
+  otp: string,
+): Promise<boolean> {
   try {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`OTP for ${phoneNumber}: ${otp}`);
       return true;
     }
@@ -156,7 +159,7 @@ export async function sendOTP(phoneNumber: string, otp: string): Promise<boolean
 
     return true;
   } catch (error) {
-    console.error('Error sending SMS:', error);
+    console.error("Error sending SMS:", error);
     return false;
   }
 }
@@ -235,7 +238,7 @@ curl -X POST http://localhost:5000/api/auth/send-otp \
 ✅ **Rotate keys** every 90 days  
 ✅ **Enable App Check** for frontend (prevents API abuse)  
 ✅ **Set up rate limiting** (already implemented in authController)  
-✅ **Monitor usage** in Firebase Console  
+✅ **Monitor usage** in Firebase Console
 
 ---
 
@@ -378,8 +381,8 @@ OTP_EXPIRY_MINUTES=10
 ### Development Mode (Current)
 
 ```typescript
-if (process.env.NODE_ENV === 'development') {
-  console.log('OTP:', otp); // Logs to console
+if (process.env.NODE_ENV === "development") {
+  console.log("OTP:", otp); // Logs to console
   return true;
 }
 ```
@@ -387,7 +390,7 @@ if (process.env.NODE_ENV === 'development') {
 ### Production Mode (With Twilio)
 
 ```typescript
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === "production") {
   await twilioClient.messages.create({
     body: `Your OTP: ${otp}`,
     to: phoneNumber,

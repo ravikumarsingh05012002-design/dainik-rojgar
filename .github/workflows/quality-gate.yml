@@ -1,0 +1,58 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Run quality checks
+        run: npm run quality:check
+
+  railway-smoke-test:
+    runs-on: ubuntu-latest
+    needs: quality
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run Railway smoke test
+        env:
+          RAILWAY_API_URL: ${{ secrets.RAILWAY_API_URL }}
+          RAILWAY_HEALTH_URL: ${{ secrets.RAILWAY_HEALTH_URL }}
+          SMOKE_TIMEOUT_MS: 20000
+        run: npm run smoke:railway

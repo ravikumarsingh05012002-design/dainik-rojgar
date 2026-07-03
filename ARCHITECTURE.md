@@ -182,7 +182,7 @@ Using Zustand for simple, efficient state management:
 
 ```typescript
 // Example store
-import create from 'zustand';
+import create from "zustand";
 
 interface AuthStore {
   user: User | null;

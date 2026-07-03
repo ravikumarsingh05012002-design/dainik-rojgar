@@ -193,7 +193,7 @@ Configure in: Settings → Resources
 ✅ Firebase private key is properly escaped  
 ✅ CORS origins restricted to your domains  
 ✅ Rate limiting enabled for OTP endpoints  
-✅ HTTPS enabled (automatic on Railway)  
+✅ HTTPS enabled (automatic on Railway)
 
 ---
 

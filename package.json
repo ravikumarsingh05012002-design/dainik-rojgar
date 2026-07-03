@@ -7,9 +7,18 @@
     "dev": "concurrently \"npm run dev --prefix backend\" \"npm run start --prefix frontend\"",
     "frontend": "npm start --prefix frontend",
     "backend": "npm run dev --prefix backend",
-    "build": "npm run build --prefix backend"
+    "build": "npm run build --prefix backend",
+    "lint:md": "markdownlint-cli2 \"**/*.md\"",
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
+    "format:check": "prettier --check \"**/*.{md,json,yml,yaml}\"",
+    "format:write": "prettier --write \"**/*.{md,json,yml,yaml}\"",
+    "typecheck:frontend": "node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json",
+    "quality:check": "markdownlint-cli2 \"**/*.md\" && prettier --check \"**/*.{md,json,yml,yaml}\" && node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json && node backend/node_modules/typescript/bin/tsc -p backend/tsconfig.json",
+    "smoke:railway": "node scripts/smoke-railway.mjs"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "markdownlint-cli2": "^0.23.0",
+    "prettier": "^3.6.2"
   }
 }

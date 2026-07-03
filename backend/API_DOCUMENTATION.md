@@ -34,22 +34,23 @@ Authorization: Bearer <jwt_token>
 
 ```typescript
 interface CreateJobRequirementPayload {
-  employerId: string;                    // MongoDB ObjectId or unique employer ID
-  workerCategory: string;                // e.g., "mason", "painter", "helper", "electrician", "plumber"
-  requiredWorkersCount: number;          // Positive integer (>0)
-  dailyWageRate: number;                 // Positive number (>0) in INR
-  jobDescription: string;                // Min 10 characters
+  employerId: string; // MongoDB ObjectId or unique employer ID
+  workerCategory: string; // e.g., "mason", "painter", "helper", "electrician", "plumber"
+  requiredWorkersCount: number; // Positive integer (>0)
+  dailyWageRate: number; // Positive number (>0) in INR
+  jobDescription: string; // Min 10 characters
   geoCoordinates: {
-    latitude: number;                    // -90 to 90
-    longitude: number;                   // -180 to 180
+    latitude: number; // -90 to 90
+    longitude: number; // -180 to 180
   };
-  location?: {                           // Optional location details
+  location?: {
+    // Optional location details
     city?: string;
     address?: string;
   };
-  skills?: string[];                     // Optional: ["skill1", "skill2", ...]
-  urgency?: "low" | "medium" | "high";   // Default: "medium"
-  estimatedDays?: number;                // Positive integer (>0). Default: 1
+  skills?: string[]; // Optional: ["skill1", "skill2", ...]
+  urgency?: "low" | "medium" | "high"; // Default: "medium"
+  estimatedDays?: number; // Positive integer (>0). Default: 1
 }
 ```
 
@@ -161,17 +162,17 @@ curl -X POST http://localhost:5000/api/jobs/requirements \
 
 ## Validation Rules
 
-| Field | Type | Constraints | Example |
-| ------- | ------ | ----------- | --------- |
-| `employerId` | string | Non-empty, valid MongoDB ID | `"507f1f77bcf86cd799439011"` |
-| `workerCategory` | string | Non-empty | `"mason"`, `"painter"`, `"helper"` |
-| `requiredWorkersCount` | number | Integer > 0 | `3`, `5`, `10` |
-| `dailyWageRate` | number | Number > 0 | `500`, `750.50`, `1000` |
-| `jobDescription` | string | Min 10 characters | `"Need 3 experienced masons..."` |
-| `geoCoordinates.latitude` | number | -90 to 90 | `26.9124`, `0`, `-45.5` |
-| `geoCoordinates.longitude` | number | -180 to 180 | `75.7873`, `0`, `-120.3` |
-| `urgency` | string | `"low"`, `"medium"`, `"high"` | `"high"` |
-| `estimatedDays` | number | Integer > 0 | `1`, `7`, `30` |
+| Field                      | Type   | Constraints                   | Example                            |
+| -------------------------- | ------ | ----------------------------- | ---------------------------------- |
+| `employerId`               | string | Non-empty, valid MongoDB ID   | `"507f1f77bcf86cd799439011"`       |
+| `workerCategory`           | string | Non-empty                     | `"mason"`, `"painter"`, `"helper"` |
+| `requiredWorkersCount`     | number | Integer > 0                   | `3`, `5`, `10`                     |
+| `dailyWageRate`            | number | Number > 0                    | `500`, `750.50`, `1000`            |
+| `jobDescription`           | string | Min 10 characters             | `"Need 3 experienced masons..."`   |
+| `geoCoordinates.latitude`  | number | -90 to 90                     | `26.9124`, `0`, `-45.5`            |
+| `geoCoordinates.longitude` | number | -180 to 180                   | `75.7873`, `0`, `-120.3`           |
+| `urgency`                  | string | `"low"`, `"medium"`, `"high"` | `"high"`                           |
+| `estimatedDays`            | number | Integer > 0                   | `1`, `7`, `30`                     |
 
 ---
 
@@ -209,7 +210,7 @@ curl -X POST http://localhost:5000/api/jobs/requirements \
 ## Integration Example (Node.js/Axios)
 
 ```typescript
-import axios from 'axios';
+import axios from "axios";
 
 interface JobRequirement {
   employerId: string;
@@ -220,50 +221,47 @@ interface JobRequirement {
   geoCoordinates: { latitude: number; longitude: number };
 }
 
-async function postJobRequirement(
-  jobData: JobRequirement,
-  authToken: string
-) {
+async function postJobRequirement(jobData: JobRequirement, authToken: string) {
   try {
     const response = await axios.post(
-      'http://localhost:5000/api/jobs/requirements',
+      "http://localhost:5000/api/jobs/requirements",
       jobData,
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-      }
+      },
     );
 
-    console.log('✅ Job Posted:', response.data.job);
+    console.log("✅ Job Posted:", response.data.job);
     return response.data.job;
   } catch (error: any) {
     if (error.response?.status === 400) {
-      console.error('❌ Validation Error:', error.response.data.errors);
+      console.error("❌ Validation Error:", error.response.data.errors);
     } else if (error.response?.status === 401) {
-      console.error('❌ Authentication Error: Invalid token');
+      console.error("❌ Authentication Error: Invalid token");
     } else {
-      console.error('❌ Server Error:', error.message);
+      console.error("❌ Server Error:", error.message);
     }
   }
 }
 
 // Usage
 const jobRequirement: JobRequirement = {
-  employerId: '507f1f77bcf86cd799439011',
-  workerCategory: 'mason',
+  employerId: "507f1f77bcf86cd799439011",
+  workerCategory: "mason",
   requiredWorkersCount: 3,
   dailyWageRate: 500,
   jobDescription:
-    'Need experienced masons for foundation work and wall construction.',
+    "Need experienced masons for foundation work and wall construction.",
   geoCoordinates: {
     latitude: 26.9124,
     longitude: 75.7873,
   },
 };
 
-postJobRequirement(jobRequirement, 'your_jwt_token');
+postJobRequirement(jobRequirement, "your_jwt_token");
 ```
 
 ---
@@ -286,12 +284,12 @@ postJobRequirement(jobRequirement, 'your_jwt_token');
 
 ## Status Codes
 
-| Code | Meaning | When Used |
-| ------ | --------- | ----------- |
-| 201 | Created | Job requirement successfully created |
-| 400 | Bad Request | Validation errors or invalid data format |
-| 401 | Unauthorized | Missing or invalid authentication token |
-| 500 | Internal Server Error | Database error or unexpected server error |
+| Code | Meaning               | When Used                                 |
+| ---- | --------------------- | ----------------------------------------- |
+| 201  | Created               | Job requirement successfully created      |
+| 400  | Bad Request           | Validation errors or invalid data format  |
+| 401  | Unauthorized          | Missing or invalid authentication token   |
+| 500  | Internal Server Error | Database error or unexpected server error |
 
 ---
 

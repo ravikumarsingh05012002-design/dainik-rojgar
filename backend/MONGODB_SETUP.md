@@ -302,7 +302,7 @@ mongodump --uri="mongodb+srv://..." --out=./backup
 ✅ **Least Privilege**: Database users have minimum required permissions  
 ✅ **Encryption**: Automatic at-rest and in-transit encryption  
 ✅ **Audit Logs**: Enable in Security → Advanced Settings  
-✅ **Regular Updates**: Keep MongoDB driver updated  
+✅ **Regular Updates**: Keep MongoDB driver updated
 
 ---
 

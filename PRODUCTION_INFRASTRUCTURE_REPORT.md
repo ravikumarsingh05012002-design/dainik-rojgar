@@ -429,8 +429,8 @@ npm start      # Runs compiled code from dist/
 **Development Mode (Current):**
 
 ```typescript
-if (process.env.NODE_ENV === 'development') {
-  console.log('📱 OTP for +919876543210: 123456');
+if (process.env.NODE_ENV === "development") {
+  console.log("📱 OTP for +919876543210: 123456");
   return true;
 }
 ```
@@ -442,7 +442,7 @@ if (process.env.NODE_ENV === 'development') {
 await twilioClient.messages.create({
   body: `Your Dainik Rojgar OTP: ${otp}`,
   from: twilioPhoneNumber,
-  to: phoneNumber
+  to: phoneNumber,
 });
 ```
 
@@ -558,10 +558,10 @@ const storedOTP = await redis.get(`otp:${phoneNumber}`);
 
 ```typescript
 // Update frontend/src/services/api.ts
-const API_BASE_URL = 
-  process.env.NODE_ENV === 'production'
-    ? 'https://your-railway-url.railway.app/api'
-    : 'http://localhost:5000/api';
+const API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://your-railway-url.railway.app/api"
+    : "http://localhost:5000/api";
 ```
 
 ### Step 5: Testing
@@ -690,7 +690,7 @@ const API_BASE_URL =
 **Solution**: Cast to `any` due to v14.1.0 type definitions issue
 
 ```typescript
-(admin as any).credential.cert(serviceAccount)
+(admin as any).credential.cert(serviceAccount);
 ```
 
 ### 2. JWT Sign Type Errors
@@ -841,4 +841,4 @@ const API_BASE_URL =
 
 ---
 
-*This report documents the complete production infrastructure setup for Dainik Rojgar. All components are tested, documented, and ready for deployment.*
+_This report documents the complete production infrastructure setup for Dainik Rojgar. All components are tested, documented, and ready for deployment._
