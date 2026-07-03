@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import type { ServiceAccount } from 'firebase-admin';
 
 /**
@@ -6,10 +6,16 @@ import type { ServiceAccount } from 'firebase-admin';
  * Used for SMS OTP verification
  */
 
-let firebaseApp: any = null;
+let firebaseApp: ReturnType<typeof initializeApp> | null = null;
 
 export function initializeFirebase(): void {
   if (firebaseApp) {
+    console.log('Firebase already initialized');
+    return;
+  }
+
+  if (getApps().length > 0) {
+    firebaseApp = getApps()[0] ?? null;
     console.log('Firebase already initialized');
     return;
   }
@@ -29,8 +35,8 @@ export function initializeFirebase(): void {
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     };
 
-    firebaseApp = admin.initializeApp({
-      credential: (admin as any).credential.cert(serviceAccount),
+    firebaseApp = initializeApp({
+      credential: cert(serviceAccount),
     });
 
     console.log('✓ Firebase Admin SDK initialized successfully');
